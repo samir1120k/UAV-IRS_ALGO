@@ -1,47 +1,65 @@
 import numpy as np
 import random
 import math
+import pandas as pd
+
+df=pd.read_csv("data.csv")
+
 
 #define required variable
-Cd=None #drag coefficient
-Af=None #fuselage area
-Wl=None #weight of UAV-IRS
+Cd= df['Cd'] #drag coefficient in equation 15
+Af=0.06 #fuselage area in equation 15 0.06
+Wl=df['Wl'] #weight of UAV-IRS 5-10
 Nr=4 #number of rotor fo UAV-IRS 
-delta=None
-V_tip=None #rotor solidity
-H=None #height of UAV-IRS
-Ar=None #area of rotor disc
-s=None #Speed of rotor
+delta=None #for calculat the p_l_b
+V_tip= 120 #rotor solidity 120
+H=df['H'] #height of UAV-IRS 
+Ar=0.503 #area of rotor disc
+s= 0.05 #Speed of rotor
 Bh=(1-2.2558*pow(10,4)*H) #air density at height H
-p_b_l=(delta/8)*Bh*Ar*s*pow(V_tip,3) 
-sigma_km=pow(10,-13) #varience of additive white Gaussian noise
-
-#eqation number 18
-def P_hov_lH(Wl,P_b_l,Nr,Ar,Bh):
-    temp1=Nr*P_b_l
-    temp2=Nr*Bh*Ar
-    temp3=math.sqrt(2*temp2)
-    temp4=pow(Wl,3/2)/temp3
-    return temp1+ temp4
-
+p_l_b=(delta/8)*Bh*Ar*s*pow(V_tip,3) 
+sigma_km=pow(10,-13) #varience of additive white Gaussian noise of population
+sigma_m=pow(10,-13) #varience of additive white Gaussian noise of base_station
 B=10 #MHz #bandwidth
-def R_down_ml(B,P_down_m,h_worst_ml): #eqation number 7
-    temp1=h_worst_ml*P_down_m
+Dm=0.49 # Mbits
+D_km=0.5 #Mbits
+F_km = 0.5 #Mbits Assuming
+Tm=10 #sec
+
+
+
+
+def R_ml_down(B,P_m_down,h_ml_worst): #eqation number 7
+    temp1=h_ml_worst*P_m_down
     return B*math.log2(1+temp1)
 
-def h_worst_ml(h_down_kml,sigma_km): #eqation number 8
-    return min(h_down_kml/pow(pow(sigma_km),2),1) # W # for minimum selection we put the value of 1
+def h_ml_worst(h_kml_down,sigma_km): #eqation number 8
+    return h_kml_down/pow(pow(sigma_km),2) # W for minimum selection we put the value of 1
 
-def h_down_kml(h_l_km,V_down_lm,h_lm): #Argument will be define later
-    return abs(h_l_km*V_down_lm*h_lm)
+# def h_kml_down(h_km_l,V_lm_down,h_lm):
+#     temp=[]
+#     for i in range(len(h_lm)):
+#         temp.append(h_km_l*V_lm_down*h_lm)
+#     temp2=min(temp)
+    return temp2
 
-Dm=0.49 # Mbits
-T_down_ml=Dm/R_down_ml #eqation number 9
+# def h_kml_down(h_km_l,V_lm_down,h_lm): #it is inside the equation number 8
+#     return abs(h_km_l*V_lm_down*h_lm)
+
+# calculate and store in the file
+# open file and import the value 
+file = open("file1.txt", "r")
+h_kml_down = file.read()
+
+file1 = open("file2.txt", "r") #inside the equation 4
+h_kml_up = file1.read()
+
+T_ml_down=Dm/R_ml_down #eqation number 9
 
 
-def P_down_m(Dm,T_com_km_str,T_up_kml_str,Tm,h_worst_ml): #eqation number 25
-    temp1=pow(((Dm/T_com_km_str*T_up_kml_str*Tm)-1),2)
-    return temp1/h_worst_ml
+def P_m_down(Dm,T_km_com,T_kml_up,Tm,h_ml_worst): #eqation number 25
+    temp1=pow(2,((Dm/T_km_com*T_kml_up*Tm)-1))
+    return temp1/h_ml_worst
     #condition have to be satisfied of eqation number 26
     #0<P_down_m<=P_max_m
     #still some value is not defined in eqation number 25
@@ -49,111 +67,70 @@ def P_down_m(Dm,T_com_km_str,T_up_kml_str,Tm,h_worst_ml): #eqation number 25
     #T_up_kml_str
     #Tm
 
-V_vfly_l = None #m/s express as follow[35]
+V_l_vfly = None #m/s express as follow[35] ,inside the dataframe
+V_lm_hfly= None # forward flight to the HP is derived using teh axial momentum theory express as follow[38]
+                # defined inside the dataframe
+
+def P_lm_blade(Nr,P_l_b,V_tip,V_lm_hfly): #eqation number 14
+    return Nr*P_l_b*(1+((3*pow(V_lm_hfly))/pow(V_tip,2)))
+
+def P_lm_fuselage(Cd,Af,Bh,V_lm_hfly): #eqation number 15
+    return (1/2)*Cd*Af*Bh*pow(V_lm_hfly,3)
+
+def P_lm_induced(Nr,Bh,Ar,Wl,V_lm_hfly): #eqation number 16
+    return Wl*pow(math.sqrt(pow(Wl,2)/(4*pow(Nr,2)*pow(Bh,2)*pow(Ar,2))+(pow(V_lm_hfly,4)/4))-(pow(V_lm_hfly,2)/2),(1/2))
 
 
-def P_vfly_l(Wl,V_vfly_l,P_b_l,Nr,Ar,Bh): #eqation number 11
+d_lm_hfly = None #horizontal distance between the UAV-IRS and the HP
+                 #defined inside the dataframe
+
+T_km_com=D_km/F_km #inside the equation 2
+
+def R_kml_up(B,P_km_up,h_kml_up,P_i_up,h_il_up,sigma_m): #eqation number 4
+    temp1=(P_km_up*h_kml_up)/ ((P_i_up*h_il_up)+pow(sigma_m,2))  #Need attention on this equation
+    return B*math.log2(1+temp1)  #defined in the dataframe
+
+T_kml_up=Dm/R_kml_up # equation number 5
+
+
+
+def P_l_vfly(Wl,V_l_vfly,P_l_b,Nr,Ar,Bh): #eqation number 11
     temp2=Nr*Bh*Ar
-    temp3=math.sqrt(pow(V_vfly_l,2)+(2*Wl)/temp2)
-    return ((Wl/2)*(V_vfly_l+temp3))+Nr*P_b_l
+    temp3=math.sqrt(pow(V_l_vfly,2)+(2*Wl)/temp2)
+    return ((Wl/2)*(V_l_vfly+temp3))+Nr*P_l_b
 
-V_hfly_lm = None # forward flight to the HP is derived using teh axial momentum theory express as follow[38]
+def T_l_vfly(H,V_l_vfly): #eqation number 12
+    return H/V_l_vfly
 
-def P_blade_lm(Nr,P_B_l,V_tip,V_hfly_lm): #eqation number 14
-    return Nr*P_B_l*(1+(3*pow(V_hfly_lm))/pow(V_tip,2))
+def P_lm_hfly(P_lm_blade,P_lm_fuselage,P_lm_induced): #eqation number 13
+    return P_lm_blade+P_lm_fuselage+P_lm_induced
 
-def P_fuselage_lm(Cd,Af,Bh,V_hfly_lm): #eqation number 15
-    return (1/2)*Cd*Af*Bh*pow(V_hfly_lm,3)
+def T_l_hfly(d_lm_hfly,V_lm_hfly): #eqation number 17
+    return d_lm_hfly/V_lm_hfly
 
-def P_induced_lm(Nr,Bh,Ar,Wl,V_hfly_lm): #eqation number 16
-    return Wl*pow(math.sqrt(pow(Wl,2)/(4*pow(Nr,2)*pow(Bh,2)*pow(Ar,2))+(pow(V_hfly_lm,4)/4))-(pow(V_hfly_lm,2)/2),(1/2))
-
-
-def P_hfly_lm(P_blade_lm,P_fuselage_lm,P_induced_lm): #eqation number 13
-    return P_blade_lm+P_fuselage_lm+P_induced_lm
-
-def T_vfly_l(H,V_vfly_l): #eqation number 12
-    return H/V_vfly_l
-
-d_hfly_lm = None #horizontal distance between the UAV-IRS and the HP
-
-def T_hfly_l(d_hfly_lm,V_hfly_lm): #eqation number 17
-    return d_hfly_lm/V_hfly_lm
-
-T_km_com=None # time required to complete the computation of the data
-T_kml_up=None # time required to upload the data
+def P_l_hov(Wl,P_l_b,Nr,Ar,Bh): #eqation number 18
+    temp1=Nr*P_l_b
+    temp2=Nr*Bh*Ar
+    temp3=math.sqrt(2*temp2)
+    temp4=pow(Wl,3/2)/temp3
+    return temp1+ temp4
 
 def T_lm_hov(T_km_com,T_kml_up,T_ml_down): #eqation number 19
     return T_km_com+T_kml_up+T_ml_down
     #we have to take the max{T_com_km,Tup_kml}
 
+def E_ml_UAV(P_l_vfly,T_l_vfly,P_lm_hfly,T_l_hfly,P_l_hov,T_lm_hov): #energy consumption of the UAV-IRS,
+    return P_l_vfly*T_l_vfly+P_lm_hfly*T_l_hfly+P_l_hov*T_lm_hov # eqation number 20
+
+def E_ml_down(P_m_down,T_ml_down): #eqation number 10
+    return P_m_down*T_ml_down
+
+def E_ml_har(P_m_har,T_m_ahr): # part of eqation number 2
+    return P_m_har*T_m_ahr
+
+def Fitness(E_ml_har,E_ml_down,E_ml_UAV): #eqation number 30
+    return E_ml_har+E_ml_down+E_ml_UAV
+
 #above all the function are define now we have to define the fitness function
 
 #genetic algorithm to optimize the UAV-IRS assignment
-
-import random
-
-def initialize_population(population_size, uav_irs_options):
-    population = []
-    for _ in range(population_size):
-        individual = {'uav_irs': random.choice(uav_irs_options)}
-        fitness = random.uniform(1, 100)
-        population.append((individual, fitness))
-    return population
-
-def evaluate_fitness(individual):
-    return random.uniform(1, 100)  # Updated fitness evaluation function
-
-def selection(population):
-    sorted_population = sorted(population, key=lambda x: x[1])
-    parent1 = sorted_population[0]
-    parent2 = sorted_population[1]
-    return parent1, parent2
-
-def crossover(parent1, parent2, beta=0.5):
-    offspring = {}
-    for key in parent1[0].keys():
-        offspring[key] = parent1[0][key] if parent1[1] < parent2[1] else parent2[0][key]
-    offspring_fitness = beta * parent1[1] + (1 - beta) * parent2[1]
-    return offspring, offspring_fitness
-
-def mutation(offspring, uav_irs_options, p_mutation=0.5):
-    for key in offspring.keys():
-        if random.random() < p_mutation:
-            offspring[key] = random.choice(uav_irs_options)
-    return offspring
-
-def genetic_algorithm(uav_irs_options, population_size, generations, p_mutation):
-    population = initialize_population(population_size, uav_irs_options)
-    
-    for gen in range(generations):
-        new_population = []
-        for _ in range(population_size):
-            parent1, parent2 = selection(population)
-            offspring, offspring_fitness = crossover(parent1, parent2, beta=0.5)
-            offspring = mutation(offspring, uav_irs_options, p_mutation)
-            offspring_fitness = evaluate_fitness(offspring)  # Recalculate fitness after mutation
-            new_population.append((offspring, offspring_fitness))
-        
-        combined_population = population + new_population
-        combined_population = sorted(combined_population, key=lambda x: x[1])[:population_size]
-        population = combined_population
-        
-        best_individual, best_fitness = population[0]
-        print(f"Generation {gen+1}: Best Fitness = {best_fitness}")
-        print(f"Best Individual: {best_individual}")
-    
-    print("\nBest individual after optimization:")
-    print(f"UAV-IRS Assignment: {best_individual['uav_irs']}")
-    print(f"Fitness: {best_fitness}")
-    return best_individual
-
-# Parameters
-uav_irs_options = [f'UAV_IRS_{i+1}' for i in range(10)]
-population_size = 50
-generations = 20
-p_mutation = 0.8
-
-# Run the genetic algorithm
-best_solution = genetic_algorithm(uav_irs_options, population_size, generations, p_mutation)
-            
