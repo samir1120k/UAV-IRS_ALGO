@@ -27,10 +27,10 @@ import pandas as pd
 
 # j=1
 # Angle=j*Angle
-# # print(Angle)
+# # # print(Angle)
 
 # Angle=np.exp(Angle)
-# # print(Angle)
+# # # print(Angle)
 
 # V_lm_down=np.zeros((50,50))
 
@@ -85,52 +85,81 @@ import pandas as pd
 # print(cd)
 
 
-V_l_vfly=[]
-for i in range(50):
-    x=random.uniform(0,100)
-    V_l_vfly.append(x)
-print(V_l_vfly)
+# V_l_vfly=[]
+# for i in range(50):
+#     x=random.uniform(0,100)
+#     V_l_vfly.append(x)
+# print(V_l_vfly)
 
-V_lm_hfly=[]
-for i in range(50):
-    x=random.uniform(0,100)
-    V_lm_hfly.append(x)
+# V_lm_hfly=[]
+# for i in range(50):
+#     x=random.uniform(0,100)
+#     V_lm_hfly.append(x)
 
-d_lm_hfly=[]
-for i in range(50):
-    x=random.uniform(0,100)
-    d_lm_hfly.append(x)
+# d_lm_hfly=[]
+# for i in range(50):
+#     x=random.uniform(0,100)
+#     d_lm_hfly.append(x)
 
-f_up=[]
-for i in range(50):
-    x=random.uniform(0,100)
-    f_up.append(x)
+# f_up=[]
+# for i in range(50):
+#     x=random.uniform(0,100)
+#     f_up.append(x)
 
-h_up=[]
-for i in range(50):
+# h_up=[]
+# for i in range(50):
+#     x=random.uniform(0,100)
+#     h_up.append(x)
+
+# P_km_up=[]
+# for i in range(50):
+#     x=random.uniform(0,100)
+#     P_km_up.append(x)
+
+# P_i_up=[]
+# for i in range(50):
+#     x=random.uniform(0,100)
+#     P_i_up.append(x)
+
+# h_il_up=[]
+# for i in range(50):
+#     x=random.uniform(0,100)
+#     h_il_up.append(x)
+
+# # creating of dataframe of above list
+
+# df1=pd.DataFrame({'h_il_up':h_il_up,'P_i_up':P_i_up,'P_km_up':P_km_up,'h_up':h_up,'f_up':f_up,'d_lm_hfly':d_lm_hfly,'V_l_vfly':V_l_vfly})
+# df1.to_csv('data1.csv',index=True)
+
+
+# P_m_har=[]
+# for i in range(10):
+#     x=random.uniform(0,100)
+#     P_m_har.append(x)
+
+# T_m_har=[]
+# for i in range(10):
+#     x=random.uniform(0,100)
+#     T_m_har.append(x)
+
+F_km=[]
+for i in range(10):
     x=random.uniform(0,100)
-    h_up.append(x)
+    F_km.append(x)
 
 P_km_up=[]
-for i in range(50):
+for i in range(10):
     x=random.uniform(0,100)
     P_km_up.append(x)
 
 P_i_up=[]
-for i in range(50):
+for i in range(10):
     x=random.uniform(0,100)
     P_i_up.append(x)
 
-h_il_up=[]
-for i in range(50):
-    x=random.uniform(0,100)
-    h_il_up.append(x)
-
 # creating of dataframe of above list
-
-df1=pd.DataFrame({'h_il_up':h_il_up,'P_i_up':P_i_up,'P_km_up':P_km_up,'h_up':h_up,'f_up':f_up,'d_lm_hfly':d_lm_hfly,'V_l_vfly':V_l_vfly})
-df1.to_csv('data1.csv',index=True)
-
+df2=pd.DataFrame({'F_km':F_km,'P_km_up':P_km_up,'P_i_up':P_i_up})
+df2.to_csv('people_data.csv',index=True)
 
 
 

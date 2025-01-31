@@ -10,6 +10,7 @@ def initialize_population(population_size, base_stations, uav_irs_options):
         }
         fitness = random.uniform(1, 100)
         population.append((individual, fitness))
+    print(population)
     return population
 
 def evaluate_fitness(individual):

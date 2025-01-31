@@ -41,10 +41,10 @@ def h_ml_worst(h_kml_down,sigma_km): #eqation number 8
 #     for i in range(len(h_lm)):
 #         temp.append(h_km_l*V_lm_down*h_lm)
 #     temp2=min(temp)
-    return temp2
+    # return temp2
 
 # def h_kml_down(h_km_l,V_lm_down,h_lm): #it is inside the equation number 8
-#     return abs(h_km_l*V_lm_down*h_lm)
+    # return abs(h_km_l*V_lm_down*h_lm)
 
 # calculate and store in the file
 # open file and import the value 
@@ -104,6 +104,8 @@ def T_l_vfly(H,V_l_vfly): #eqation number 12
 
 def P_lm_hfly(P_lm_blade,P_lm_fuselage,P_lm_induced): #eqation number 13
     return P_lm_blade+P_lm_fuselage+P_lm_induced
+
+
 
 def T_l_hfly(d_lm_hfly,V_lm_hfly): #eqation number 17
     return d_lm_hfly/V_lm_hfly
