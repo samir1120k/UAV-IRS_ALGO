@@ -12,56 +12,47 @@ sigma_m = pow(10, -13)  # Noise variance (BS)
 Tm = 10  # Time in seconds
 sigma_km = pow(10, -13)  # Noise variance (Population)
 j=2
-Tm=10 #sec
 
 # Define the number of base stations and UAV-IRS
-num_base_stations = 1
-num_uav_irs = 1
+num_base_stations = 10
+num_uav_irs = 10
 num_people = 50
 
-minidx=None
 # Initialize fitness matrix
 fitness_matrix = np.zeros((num_base_stations, num_uav_irs))  # Shape: (10,10)
 
 # Iterate over each base station and UAV-IRS pair
-# for m in range(num_base_stations):
-#     for l in range(num_uav_irs):
+for m in range(num_base_stations):
+    for l in range(num_uav_irs):
 
-# Generate random power and time values for energy harvesting
-P_m_har_values = df['P_m_har'] 
-T_m_har_values = df['T_m_har']
-for a in P_m_har_values:
-    for b in T_m_har_values:
+        # Generate random power and time values for energy harvesting
+        P_m_har_values = df['P_m_har'] 
+        T_m_har_values = df['T_m_har']
+
         # Energy harvested (returns scalar value after min selection)
         def E_ml_har(P_m_har, T_m_har):
             P_m_har=min(P_m_har)
             T_m_har=min(T_m_har)
             return P_m_har * T_m_har  # Returns a scalar after `min`
 
-        E_ml_har_values = E_ml_har(a,b)
-        # E_ml_har_value = min(E_ml_har_values) # Returns a scalar
-        # minidx=E_ml_har_values.index(E_ml_har_value)
+        E_ml_har_values = [E_ml_har(P_m_har_values,T_m_har_values)]
+        E_ml_har_value = min(E_ml_har_values) # Returns a scalar
+        minidx=E_ml_har_values.index(E_ml_har_value)
+        print("Minimum Power: ",P_m_har_values[minidx])
+        print("Minimum time: ",T_m_har_values[minidx])
 
-
-        # Compute V_lm_up (Diagonal Matrix)
-
-        Angle = j*(np.random.uniform(0, np.pi, num_uav_irs))  # Shape: (10,)
-        Angle=np.exp(Angle)
-        V_lm_up = np.diag(Angle)  # Shape: (10,10)
-
-        # Compute V_lm_down (Diagonal Matrix)
-        Angle1 = j*(np.random.uniform(0, np.pi, num_uav_irs))  # Shape: (10,)
-        Angle1=np.exp(Angle1)
-        V_lm_down = np.diag(Angle1)  # Shape: (10,10)
-
-        # Transmission times (returns scalars after min selection)
+#_____________________________________________________________________________________________
+             # Transmission times (returns scalars after min selection)
         T_km_com_values = [D_km / random.uniform(20, 100) for _ in range(10)]
         T_kml_up_values = [Dm / random.uniform(1, 10) for _ in range(10)]
         T_ml_down_values = [Dm / random.uniform(1, 10) for _ in range(10)]
+        P_ml_down_values = [Dm / random.uniform(1, 10) for _ in range(10)]
 
         T_km_com = min(T_km_com_values)  # Scalar
         T_kml_up = min(T_kml_up_values)  # Scalar
         T_ml_down = min(T_ml_down_values)  # Scalar
+        P_m_down = min(P_ml_down_values)  # Scalar
+
 
         # Energy Consumption (Downlink) - Returns scalar after min selection
         def E_ml_down(P_m_down, T_ml_down):
@@ -76,15 +67,14 @@ for a in P_m_har_values:
 
         E_ml_down_values = E_ml_down(P_m_down,T_ml_down)
         E_ml_down_value = min(E_ml_down_values)  # Returns a scalar
-
         # Energy consumption of UAV-IRS (Returns scalar after min selection)
         def E_ml_UAV(P_l_vfly, T_l_vfly, P_lm_hfly, T_l_hfly, P_l_hov, T_lm_hov):
             return P_l_vfly * T_l_vfly + P_lm_hfly * T_l_hfly + P_l_hov * T_lm_hov  # Returns a scalar
 
         E_ml_UAV_values = [
             E_ml_UAV(random.uniform(0, 10), random.uniform(1, 10),
-                        random.uniform(0, 10), random.uniform(1, 10),
-                        random.uniform(0, 10), random.uniform(1, 10)) for _ in range(10)
+                     random.uniform(0, 10), random.uniform(1, 10),
+                     random.uniform(0, 10), random.uniform(1, 10)) for _ in range(10)
         ]
 
         E_ml_UAV_value = min(E_ml_UAV_values)  # Returns a scalar
@@ -93,10 +83,8 @@ for a in P_m_har_values:
         def Fitness(E_ml_har, E_ml_down, E_ml_UAV):
             return E_ml_har + E_ml_down + E_ml_UAV  # Returns a scalar
 
-        fitness_matrix = Fitness(E_ml_har_values, E_ml_down_value, E_ml_UAV_value)
+        fitness_matrix[m, l] = Fitness(E_ml_har_value, E_ml_down_value, E_ml_UAV_value)
 
-        # Output the final fitness matrix
-        print("Minimum Power: ",a)
-        print("Minimum time: ",b)
-        print(f"Final Fitness Matrix (Shape: {num_base_stations}x{num_uav_irs}):")
-        print(fitness_matrix)
+# Output the final fitness matrix
+print(f"Final Fitness Matrix (Shape: {num_base_stations}x{num_uav_irs}):")
+print(fitness_matrix)

@@ -1,4 +1,4 @@
-# for simiplycity we take 50 people(km) and 10(l) UAV-IRS 10(m) Base_Station
+# for simiplycity we take 50 people(km) and 1(l) UAV-IRS 1(m) Base_Station
 import pandas as pd
 import numpy as np
 import math
