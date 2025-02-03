@@ -142,24 +142,73 @@ import pandas as pd
 #     x=random.uniform(0,100)
 #     T_m_har.append(x)
 
-F_km=[]
-for i in range(10):
-    x=random.uniform(0,100)
-    F_km.append(x)
+# P_m_har=[]
+# for i in range(10):
+#     x=random.uniform(0,100)
+#     P_m_har.append(x)
 
-P_km_up=[]
-for i in range(10):
-    x=random.uniform(0,100)
-    P_km_up.append(x)
+# T_m_har=[]
+# for i in range(10):
+#     x=random.uniform(0,100)
+#     T_m_har.append(x)
 
-P_i_up=[]
-for i in range(10):
-    x=random.uniform(0,100)
-    P_i_up.append(x)
+# P_m_down=[]
+# for i in range(10):
+#     x=random.uniform(0,100)
+#     P_m_down.append(x)
 
-# creating of dataframe of above list
-df2=pd.DataFrame({'F_km':F_km,'P_km_up':P_km_up,'P_i_up':P_i_up})
-df2.to_csv('people_data.csv',index=True)
+# T_ml_down=[]
+# for i in range(10):
+#     x=random.uniform(0,100)
+#     T_ml_down.append(x)
+
+# H=[]
+# for i in range(10):
+#     x=random.uniform(0,100)
+#     H.append(x)
+
+
+# # creating of dataframe of above list
+# df2=pd.DataFrame({'P_m_har':P_m_har,'T_m_har':T_m_har,'P_m_down':P_m_down,'T_ml_down':T_ml_down,'H':H})
+# df2.to_csv('BS_data.csv',index=True)
+
+V_lm_vfly=[]
+for i in range(8):
+    x=random.uniform(0,100)
+    V_lm_vfly.append(x)
+
+V_lm_hfly=[]
+for i in range(8):
+    x=random.uniform(0,100)
+    V_lm_hfly.append(x)
+
+D_l_hfly=[]
+
+for i in range(8):
+    x=random.uniform(0,100)
+    D_l_hfly.append(x)
+
+
+df3=pd.DataFrame({'V_lm_vfly':V_lm_vfly,'V_lm_hfly':V_lm_hfly,'D_l_hfly':D_l_hfly})
+df3.to_csv('UAV_data.csv',index=True)
+
+
+T_km_com=[]
+for i in range(50):
+    x=random.uniform(0,100)
+    T_km_com.append(x)
+
+T_km_up=[]
+for i in range(50):
+    x=random.uniform(0,100)
+    T_km_up.append(x)
+
+
+df4=pd.DataFrame({'T_km_com':T_km_com,'T_km_up':T_km_up})
+df4.to_csv('people_data.csv',index=True)
+
+
+
 
 
 
