@@ -157,3 +157,6 @@ print("\nParent 2:")
 print(f"  Fitness: {parent2_fitness}")
 for key, value in parent2_data.items():
     print(f"  {key}: {value}")
+
+
+

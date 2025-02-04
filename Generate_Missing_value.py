@@ -1,6 +1,7 @@
 import random
 import numpy as np
 import pandas as pd
+from numpy import random
 # Cd=[]
 # Wl=[]
 # H=[]
@@ -172,41 +173,43 @@ import pandas as pd
 # df2=pd.DataFrame({'P_m_har':P_m_har,'T_m_har':T_m_har,'P_m_down':P_m_down,'T_ml_down':T_ml_down,'H':H})
 # df2.to_csv('BS_data.csv',index=True)
 
-V_lm_vfly=[]
-for i in range(8):
-    x=random.uniform(0,100)
-    V_lm_vfly.append(x)
+# V_lm_vfly=[]
+# for i in range(8):
+#     x=random.uniform(0,100)
+#     V_lm_vfly.append(x)
 
-V_lm_hfly=[]
-for i in range(8):
-    x=random.uniform(0,100)
-    V_lm_hfly.append(x)
+# V_lm_hfly=[]
+# for i in range(8):
+#     x=random.uniform(0,100)
+#     V_lm_hfly.append(x)
 
-D_l_hfly=[]
+# D_l_hfly=[]
 
-for i in range(8):
-    x=random.uniform(0,100)
-    D_l_hfly.append(x)
-
-
-df3=pd.DataFrame({'V_lm_vfly':V_lm_vfly,'V_lm_hfly':V_lm_hfly,'D_l_hfly':D_l_hfly})
-df3.to_csv('UAV_data.csv',index=True)
+# for i in range(8):
+#     x=random.uniform(0,100)
+#     D_l_hfly.append(x)
 
 
-T_km_com=[]
-for i in range(50):
-    x=random.uniform(0,100)
-    T_km_com.append(x)
-
-T_km_up=[]
-for i in range(50):
-    x=random.uniform(0,100)
-    T_km_up.append(x)
+# df3=pd.DataFrame({'V_lm_vfly':V_lm_vfly,'V_lm_hfly':V_lm_hfly,'D_l_hfly':D_l_hfly})
+# df3.to_csv('UAV_data.csv',index=True)
 
 
-df4=pd.DataFrame({'T_km_com':T_km_com,'T_km_up':T_km_up})
-df4.to_csv('people_data.csv',index=True)
+# T_km_com=[]
+# for i in range(50):
+#     x=random.uniform(0,100)
+#     T_km_com.append(x)
 
+# T_km_up=[]
+# for i in range(50):
+#     x=random.uniform(0,100)
+#     T_km_up.append(x)
+
+
+# df4=pd.DataFrame({'T_km_com':T_km_com,'T_km_up':T_km_up})
+# df4.to_csv('people_data.csv',index=True)
+
+#calculating the h_kml_down
+#for example we take reflecting surface is 50
 
 
 
