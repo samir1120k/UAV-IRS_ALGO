@@ -7,6 +7,7 @@ import random
 
 P_m_har=None # using loop of size fo Base_station
 T_m_har=None # using loop of size fo Base_station
+
 def E_ml_har(P_m_har,T_m_har): # part of eqation number 2  
     return P_m_har*T_m_har   #it should be m*l dimension
 
@@ -159,8 +160,6 @@ def E_ml_UAV(P_l_vfly,T_l_vfly,P_lm_hfly,T_l_hfly,P_l_hov,T_lm_hov): #energy con
 
 def Fitness(E_ml_har,E_ml_down,E_ml_UAV): #eqation number 30
     return E_ml_har+E_ml_down+E_ml_UAV # it should be m*l dimension
-
-
 
 
 

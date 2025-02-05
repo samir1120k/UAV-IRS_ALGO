@@ -2,6 +2,9 @@ import random
 import numpy as np
 import pandas as pd
 from numpy import random
+import math
+import cmath
+
 # Cd=[]
 # Wl=[]
 # H=[]
@@ -210,7 +213,48 @@ from numpy import random
 
 #calculating the h_kml_down
 #for example we take reflecting surface is 50
+num_of_irs=50
+Angle=np.random.uniform(0,180, num_of_irs)
+# print(Angle)
+h_l_km=np.random.uniform(0,100, num_of_irs)
+h_l_m=np.random.uniform(0,100, num_of_irs)
 
+
+
+# Example in degrees (convert first)
+
+result=[]
+def calculate_exp_i_theta(theta):
+  """Calculates e^(i*theta) where i is the imaginary unit.
+
+  Args:
+    theta: The angle in radians.
+
+  Returns:
+    A complex number representing e^(i*theta).
+  """
+  return cmath.exp(1j * theta)  # 1j represents the imaginary unit in Python
+
+for i in range(len(Angle)):
+    theta_radians = math.radians(Angle[i])
+    results= calculate_exp_i_theta(theta_radians)
+    result.append(results)
+
+
+# print(result)
+
+diagonal=np.diag(result)
+# print(diagonal)
+h_l_km.transpose()
+# print(h_l_km.shape)
+
+
+a=np.dot(h_l_km,diagonal)
+b=np.dot(a,h_l_m)
+print(b)
+print(b+2)
+
+# print(final)
 
 
 

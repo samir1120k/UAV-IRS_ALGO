@@ -9,7 +9,7 @@ uav=pd.read_csv(r'UAV_data.csv')
 people=pd.read_csv(r'people_data.csv')
 
 
-Wl=[4,5,6,7,8,9,10]
+Wl=[4,5,6,7,8,9,10,6]
 H=base['H']
 P_m_har=base['P_m_har']
 T_m_har=base['T_m_har']
@@ -69,28 +69,34 @@ num_iterations = 10  # Or however many iterations you want
 num_generation=10
 num_uav_irs=8
 
-parent1_fitness = None  # Store fitness value
-parent1_data = {}      # Store corresponding variables
-parent2_fitness = None  # Store fitness value
-parent2_data = {}      # Store corresponding variables
-population=[]
-best_fitness = float('inf')  # Initialize with infinity
-best_individual = {}  # Store the individual with the best fitness
 all_best_individuals=[]
+
+P_m_har_value = P_m_har.values[0]
+T_m_har_value =T_m_har.values[0]
+P_m_down_value = P_m_down.values[0]
+T_ml_down_value =T_ml_down.values[0]
+H_value =H.values[0]
 for k in range(num_uav_irs):
+    best_fitness = float('inf')  # Initialize with infinity
+    best_individual = {}  # Store the individual with the best fitness
+    population=[]
+    V_lm_vfly_value = V_lm_vfly.values[k]
+    V_lm_hfly_value = V_lm_hfly.values[k]
+    D_l_hfly_value = D_l_hfly.values[k]
+    Wl_value = Wl[k]
+
     for j in range(num_generation):
+        parent1_fitness = None  # Store fitness value
+        parent1_data = {}      # Store corresponding variables
+        parent2_fitness = None  # Store fitness value
+        parent2_data = {}      # Store corresponding variables
+        child_fitness=None
+        child_data1={}
+
+
         for i in range(num_iterations):
-            H_value = random.choice(H.values)
-            Wl_value = random.choice(Wl)
-            P_m_down_value = random.choice(P_m_down.values)
-            P_m_har_value = random.choice(P_m_har.values)
-            T_m_har_value = random.choice(T_m_har.values)
-            T_ml_down_value = random.choice(T_ml_down.values)
             f_km_value = random.choice(T_km_com.values)
             T_km_up_value = random.choice(T_km_up.values)
-            V_lm_vfly_value = random.choice(V_lm_vfly.values)
-            V_lm_hfly_value = random.choice(V_lm_hfly.values)
-            D_l_hfly_value = random.choice(D_l_hfly.values)
 
             Bh = (1 - 2.2558 * pow(10, 4) * H_value)
             Bh = max(1, Bh)
@@ -199,8 +205,6 @@ for k in range(num_uav_irs):
 
         # compute the fitness of child and store in the child_fitness
 
-        child_fitness=None
-        child_data1={}
 
         def compute_fitness(data):  # Takes a dictionary of parameters as input
             H_value = data['H_value']
