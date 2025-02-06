@@ -216,46 +216,37 @@ import cmath
 num_of_irs=50
 Angle=np.random.uniform(0,180, num_of_irs)
 # print(Angle)
-h_l_km=np.random.uniform(0,100, num_of_irs)
-h_l_m=np.random.uniform(0,100, num_of_irs)
+h_l_km=np.random.uniform(0,10, num_of_irs)
+h_l_m=np.random.uniform(0,10, num_of_irs)
+
+P_km_up=np.random.uniform(0,10,num_of_irs)
+
+df5=pd.DataFrame({'Angle':Angle,'h_l_km':h_l_km,'h_l_m':h_l_m,'P_km_up':P_km_up})
+df5.to_csv('IRS_data_up.csv',index=True)
 
 
+# def calculate_exp_i_theta(theta):
+#   return cmath.exp(1j * theta) 
+#  # 1j represents the imaginary unit in Python
 
-# Example in degrees (convert first)
+# def h_kml_down(Angle,h_l_m,h_l_km):
+#   result=[]
+#   for i in range(len(Angle)):
+#       theta_radians = math.radians(Angle[i])
+#       results= calculate_exp_i_theta(theta_radians)
+#       result.append(results)
 
-result=[]
-def calculate_exp_i_theta(theta):
-  """Calculates e^(i*theta) where i is the imaginary unit.
+#   diagonal=np.diag(result)
+#   h_l_km.transpose()
 
-  Args:
-    theta: The angle in radians.
+#   a=np.dot(h_l_km,diagonal)
+#   b=np.dot(a,h_l_m)
+#   final=abs(b)
+#   return final**2
 
-  Returns:
-    A complex number representing e^(i*theta).
-  """
-  return cmath.exp(1j * theta)  # 1j represents the imaginary unit in Python
-
-for i in range(len(Angle)):
-    theta_radians = math.radians(Angle[i])
-    results= calculate_exp_i_theta(theta_radians)
-    result.append(results)
-
-
-# print(result)
-
-diagonal=np.diag(result)
-# print(diagonal)
-h_l_km.transpose()
-# print(h_l_km.shape)
-
-
-a=np.dot(h_l_km,diagonal)
-b=np.dot(a,h_l_m)
-print(b)
-print(b+2)
+# final=h_kml_down(Angle,h_l_m,h_l_km)
 
 # print(final)
-
 
 
 
