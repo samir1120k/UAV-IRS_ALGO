@@ -74,7 +74,7 @@ def T_lm_hov(T_km_com, T_kml_up, T_ml_down):  # Equation number 19
 # Genetic Algorithm Parameters
 num_bs = 10
 num_iterations = 10  # Number of iterations for each generation
-num_generation = 100  # Number of generations
+num_generation = 10  # Number of generations
 num_uav_irs = 8
 all_best_combinations = []  # Store the best combination of BS and UAV
 

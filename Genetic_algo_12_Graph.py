@@ -5,6 +5,7 @@ import random
 import math
 from numpy import random
 import cmath
+import matplotlib.pyplot as plt # Import matplotlib
 
 # Load datasets related to Base Stations, UAVs, and Clients
 base = pd.read_csv(r'BS_data.csv')  # Dataset containing values related to Base Stations
@@ -14,8 +15,8 @@ IRS=pd.read_csv(r'IRS_data.csv') #dataset containing value of downlink transmiss
 IRS_UP=pd.read_csv(r'IRS_data_up.csv') #dataset containing value of uplink transmission of single client
 
 # Constants
-Wl = 35.28  # Weight of UAV-IRS
-H =20 # Height of UAV-IRS above the ground
+Wl = [4, 5, 6, 7, 8, 9, 10, 6]  # Weight of UAV-IRS
+H = base['H']  # Height of UAV-IRS above the ground
 P_m_har = base['P_m_har']  # Harvesting power of each Base Station
 T_m_har = base['T_m_har']  # Harvesting time of each Base Station
 P_m_down = base['P_m_down']  # Downlink power of Base Station
@@ -90,15 +91,15 @@ def R_ml_down(B,P_m_down,h_ml_worst): #eqation number 7
     return B*math.log2(1+temp1)
 
 def h_ml_worst(h_kml_down,sigma_km): #eqation number 8
-    return h_kml_down/(sigma_km**2) # it will return the sigal value which is minimum of all 
-               # the value for each itaration
+    return h_kml_down/(sigma_km**2) # it will return the sigal value which is minimum of all
+                    # the value for each itaration
 
 def calculate_exp_i_theta(theta): # part of equation 8
-  return cmath.exp(1j * theta) 
+  return cmath.exp(1j * theta)
  # 1j represents the imaginary unit in Python
 
 def h_kml_down(Angle,h_l_m,h_l_km): # part of equation 8
-  
+
   result=[]
   for i in range(len(Angle)):
       theta_radians = math.radians(Angle[i])
@@ -113,27 +114,27 @@ def h_kml_down(Angle,h_l_m,h_l_km): # part of equation 8
   return (final**2)
 
 def R_kml_up(B,P_km_up,h_kml_up,Sub,sigma_m): #eqation number 4
-    temp1=(P_km_up*h_kml_up)/ (Sub+(sigma_m**2)) 
-    return B*math.log2(1+temp1) 
-
+    temp1=(P_km_up*h_kml_up)/ (Sub+(sigma_m**2))
+    return B*math.log2(1+temp1)
 
 
 #_______________________________________________________________________________________________
 # Genetic Algorithm Parameters
-num_bs = 5
+num_bs = 10
 num_iterations = 10  # Number of iterations for each generation
-num_generation = 10  # Number of generations
+num_generation = 30  # Number of generations (increased to 100)
 num_uav_irs = 8
 all_best_combinations = []  # Store the best combination of BS and UAV
+all_best_individuals = [] # Store all best individuals across all BS and UAV combinations
 
 # Main Genetic Algorithm Loop
 for l in range(num_bs):
-    all_best_individuals = []
+    all_best_individuals_bs = [] # Store best individuals for current BS
     P_m_har_value = P_m_har.values[l]
     T_m_har_value = T_m_har.values[l]
     P_m_down_value = P_m_down.values[l]
     # T_ml_down_value = T_ml_down.values[l]
-    H_value = H
+    H_value = H.values[l]
 
     for k in range(num_uav_irs):
         best_fitness = float('inf')  # Initialize with infinity
@@ -142,7 +143,7 @@ for l in range(num_bs):
         V_lm_vfly_value = V_lm_vfly.values[k]
         V_lm_hfly_value = V_lm_hfly.values[k]
         D_l_hfly_value = D_l_hfly.values[k]
-        Wl_value = Wl
+        Wl_value = Wl[k]
 
         for i in range(50):
             f_km_value = f_km[i]  # Randomly select computation time
@@ -202,12 +203,13 @@ for l in range(num_bs):
                 'h_kml_down_value':h_kml_down_value,
                 'T_km_com_value':T_km_com_value
             }
-                        # Store parent data in the population list
+                                    # Store parent data in the population list
             population.append({
                 'fitness': result_fitness,
                 'data': current_data
             })
 
+        generations_data = [] # List to store fitness for each generation
         for j in range(num_generation):
             child_population=[]
             for i in range(0, len(population), 2): # Corrected loop to pair population members
@@ -299,20 +301,29 @@ for l in range(num_bs):
             new_population = new_population[:50] #select top 50 based on fitness
 
             population = new_population #update population with new population
+            generations_data.append(population[0].copy()) # Store best fitness for each generation
 
 
         best_individual_pair = population[0].copy() # Store a COPY
-        best_individual_pair['generation'] = j + 1
+        best_individual_pair['generation'] = j + 1 #generation will be last j value which is incorrect
         best_individual_pair['type'] = 'GA'
-        all_best_individuals.append(best_individual_pair)  # Store a COPY
+        best_individual_pair['bs_index'] = l # Store BS index
+        best_individual_pair['uav_index'] = k # Store UAV index
+        all_best_individuals_bs.append(best_individual_pair) # Store best individual for current BS and UAV pair
 
+        # Store generation data for current BS-UAV pair
         all_best_combinations.append({
             'bs_index': l,
             'uav_index': k,
             'best_fitness': population[0]['fitness'], # Store best fitness for this BS-UAV pair
-            'best_individual': best_individual_pair
+            'best_individual': best_individual_pair,
+            'generation_fitness': [gen['fitness'] for gen in generations_data] # Store fitness for each generation
         })
         # print(f"Best Fitness for BS {l}, UAV {k}: {population[0]['fitness']:.4f}") # Print fitness after each pair generation
+
+    # Find best individual for current BS across all UAVs
+    best_individual_for_bs = min(all_best_individuals_bs, key=lambda x: x['fitness'])
+    # print(f"Best Fitness for BS {l} across all UAVs: {best_individual_for_bs['fitness']:.4f}")
 
 #select the best unique Base station and UAV-IRS pair using Auction based method
 # Optimization: Create a dictionary to quickly lookup combinations by BS index and UAV index
@@ -352,6 +363,8 @@ while unassigned_bs and unassigned_uavs:
 
 # Print the best assignments
 print("\n--- Best Unique UAV Assignments (Auction Based Method) ---")
+best_pair_for_plot = None # Variable to store the best pair for plotting
+min_fitness_for_plot = float('inf')
 for assignment in best_assignments:
     print(f"\nBest Assignment for BS {assignment['bs_index']}:")
     print(f" UAV Index: {assignment['uav_index']}")
@@ -362,6 +375,11 @@ for assignment in best_assignments:
     for key, value in best_ind['data'].items():
         print(f" {key}: {value}")
     print("-" * 20)
+
+    # Determine the best pair for plotting (the one with the minimum fitness among assignments)
+    if assignment['best_individual']['fitness'] < min_fitness_for_plot:
+        min_fitness_for_plot = assignment['best_individual']['fitness']
+        best_pair_for_plot = assignment
 
 # Print base stations or UAVs without assignments (if any)
 if unassigned_bs:
@@ -375,3 +393,50 @@ if unassigned_uavs:
     for uav_index in unassigned_uavs:
         print(f"UAV {uav_index} : No BS is assigned")
         print("-" * 20)
+
+# Plotting graph for the best BS-UAV pair
+best_pair_combination = min(all_best_combinations, key=lambda x: x['best_fitness'])
+best_bs_index_plot = best_pair_combination['bs_index']
+best_uav_index_plot = best_pair_combination['uav_index']
+
+generations = []
+fitness_values = []
+
+
+# Calculate sum of best fitness values for each generation across all BS-UAV pairs
+sum_fitness_per_generation = [0] * num_generation
+for gen_idx in range(num_generation):
+    generation_sum = 0
+    for combination in all_best_combinations:
+        generation_sum += combination['generation_fitness'][gen_idx]
+    sum_fitness_per_generation[gen_idx] = generation_sum
+
+generation_indices = list(range(1, num_generation + 1)) # Generation numbers for x-axis
+
+# Plotting the graph
+plt.figure(figsize=(10, 6))
+plt.plot(generation_indices, sum_fitness_per_generation, marker='o', linestyle='-')
+plt.title('Sum of Best Fitness Values Across Generations')
+plt.xlabel('Generation Number')
+plt.ylabel('Sum of Best Fitness Values')
+plt.grid(True)
+plt.xticks(generation_indices) # Ensure x-axis ticks are at each generation
+plt.show()
+
+#plot the graph of single  best pair  uav  base station of best finess value across the generation 
+# Plotting the graph for the best pair
+if best_pair_for_plot:
+    fitness_history_best_pair = best_pair_for_plot['fitness_history']
+    generations = range(1, num_generation + 1) # Generation numbers for x-axis
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(generations, fitness_history_best_pair, marker='o', linestyle='-')
+    plt.xlabel('Generation')
+    plt.ylabel('Fitness Value')
+    plt.title(f'Fitness Improvement Over Generations for Best BS-UAV Pair (BS {best_pair_for_plot['bs_index']}, UAV {best_pair_for_plot['uav_index']})')
+    plt.grid(True)
+    plt.xticks(generations) # Ensure all generation numbers are shown
+    plt.tight_layout() # Adjust layout to prevent labels from overlapping
+    plt.show()
+else:
+    print("\nNo best pair found for plotting.")

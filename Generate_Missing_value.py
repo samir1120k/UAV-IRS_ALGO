@@ -136,45 +136,27 @@ import cmath
 # df1.to_csv('data1.csv',index=True)
 
 
-# P_m_har=[]
-# for i in range(10):
-#     x=random.uniform(0,100)
-#     P_m_har.append(x)
 
-# T_m_har=[]
-# for i in range(10):
-#     x=random.uniform(0,100)
-#     T_m_har.append(x)
+T_m_har=[]
+for i in range(5):
+    x=random.uniform(0,0.1)
+    T_m_har.append(x)
 
-# P_m_har=[]
-# for i in range(10):
-#     x=random.uniform(0,100)
-#     P_m_har.append(x)
+P_m_har=[]
+for i in range(5):
+    x=random.uniform(0,10)
+    P_m_har.append(x)
 
-# T_m_har=[]
-# for i in range(10):
-#     x=random.uniform(0,100)
-#     T_m_har.append(x)
-
-# P_m_down=[]
-# for i in range(10):
-#     x=random.uniform(0,100)
-#     P_m_down.append(x)
-
-# T_ml_down=[]
-# for i in range(10):
-#     x=random.uniform(0,100)
-#     T_ml_down.append(x)
-
-# H=[]
-# for i in range(10):
-#     x=random.uniform(0,100)
-#     H.append(x)
+P_m_down=[]
+for i in range(5):
+    x=random.uniform(0,10)
+    P_m_down.append(x)
 
 
-# # creating of dataframe of above list
-# df2=pd.DataFrame({'P_m_har':P_m_har,'T_m_har':T_m_har,'P_m_down':P_m_down,'T_ml_down':T_ml_down,'H':H})
-# df2.to_csv('BS_data.csv',index=True)
+
+# creating of dataframe of above list
+df2=pd.DataFrame({'P_m_har':P_m_har,'T_m_har':T_m_har,'P_m_down':P_m_down,})
+df2.to_csv('BS_data.csv',index=True)
 
 # V_lm_vfly=[]
 # for i in range(8):
@@ -213,16 +195,16 @@ import cmath
 
 #calculating the h_kml_down
 #for example we take reflecting surface is 50
-num_of_irs=50
-Angle=np.random.uniform(0,180, num_of_irs)
-# print(Angle)
-h_l_km=np.random.uniform(0,10, num_of_irs)
-h_l_m=np.random.uniform(0,10, num_of_irs)
+# num_of_irs=50
+# Angle=np.random.uniform(0,180, num_of_irs)
+# # print(Angle)
+# h_l_km=np.random.uniform(0,10, num_of_irs)
+# h_l_m=np.random.uniform(0,10, num_of_irs)
 
-P_km_up=np.random.uniform(0,10,num_of_irs)
+# P_km_up=np.random.uniform(0,10,num_of_irs)
 
-df5=pd.DataFrame({'Angle':Angle,'h_l_km':h_l_km,'h_l_m':h_l_m,'P_km_up':P_km_up})
-df5.to_csv('IRS_data_up.csv',index=True)
+# df5=pd.DataFrame({'Angle':Angle,'h_l_km':h_l_km,'h_l_m':h_l_m,'P_km_up':P_km_up})
+# df5.to_csv('IRS_data_up.csv',index=True)
 
 
 # def calculate_exp_i_theta(theta):

@@ -11,7 +11,7 @@ people = pd.read_csv(r'people_data.csv')  # Dataset containing values related to
 
 # Constants
 Wl = [4, 5, 6, 7, 8, 9, 10, 6]  # Weight of UAV-IRS
-H = base['H']  # Height of UAV-IRS above the ground
+H = 20 # Height of UAV-IRS above the ground
 P_m_har = base['P_m_har']  # Harvesting power of each Base Station
 T_m_har = base['T_m_har']  # Harvesting time of each Base Station
 P_m_down = base['P_m_down']  # Downlink power of Base Station
@@ -69,7 +69,7 @@ def T_lm_hov(T_km_com, T_kml_up, T_ml_down):  # Equation number 19
     return T_km_com + T_kml_up + T_ml_down  # Total time calculation
 
 # Genetic Algorithm Parameters
-num_bs = 10
+num_bs = 5
 num_iterations = 10  # Number of iterations for each generation
 num_generation = 10  # Number of generations
 num_uav_irs = 8
