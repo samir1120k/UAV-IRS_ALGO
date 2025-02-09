@@ -9,14 +9,21 @@ import cmath
 import matplotlib.pyplot as plt
 
 
-
-
 # Load datasets related to Base Stations, UAVs, and Clients
 base = pd.read_csv(r'BS_data.csv')
 uav = pd.read_csv(r'UAV_data.csv')
 people = pd.read_csv(r'people_data.csv')
 IRS=pd.read_csv(r'IRS_data.csv')
 IRS_UP=pd.read_csv(r'IRS_data_up.csv')
+
+Angle_df=pd.read_csv(r'Angle.csv') # Renamed to avoid overwriting
+h_l_km_df=pd.read_csv(r'h_l_km.csv') # Renamed to avoid overwriting
+h_l_m_df=pd.read_csv(r'h_l_m.csv') # Renamed to avoid overwriting
+
+Angle_UP_df=pd.read_csv(r'Angle.csv') # Renamed to avoid overwriting and using Angle_UP, corrected filename
+g_l_km_df=pd.read_csv(r'h_l_km.csv') # Renamed to avoid overwriting and using g_l_km_df, corrected filename
+g_l_m_df=pd.read_csv(r'h_l_m.csv') # Renamed to avoid overwriting and using g_l_m_df, corrected filename
+
 
 # Constants
 Wl = 35.28
@@ -31,13 +38,13 @@ f_km=np.random.uniform(0,10, 50) #Frequency of local computing
 V_lm_vfly = uav['V_lm_vfly']
 V_lm_hfly = uav['V_lm_hfly']
 D_l_hfly = 100
-Angle=IRS['Angle']
-h_l_km=IRS['h_l_km']
-h_l_m=IRS['h_l_m']
+# Angle=IRS['Angle'] # Not needed as we load from CSV now
+# h_l_km=IRS['h_l_km'] # Not needed as we load from CSV now
+# h_l_m=IRS['h_l_m'] # Not needed as we load from CSV now
 P_km_up=IRS_UP['P_km_up']
-Angle1=IRS_UP['Angle']
-g_l_km=IRS_UP['h_l_km']
-g_l_m=IRS_UP['h_l_m']
+Angle1_col=IRS_UP['Angle'] # Renamed to avoid confusion with Angle dataframe
+g_l_km_col=IRS_UP['h_l_km'] # Renamed
+g_l_m_col=IRS_UP['h_l_m'] # Renamed
 
 
 # Additional constants for calculations
@@ -52,6 +59,7 @@ D_km = 0.5
 Dm=0.49
 B=10 #MHz
 sigma_km=10**(-13)
+num_population=50
 
 # Fitness function to calculate total energy consumption
 def Fitness(E_ml_har, E_ml_down, E_ml_UAV):
@@ -90,46 +98,54 @@ def T_lm_hov(T_km_com, T_kml_up, T_ml_down):
     return T_km_com + T_kml_up + T_ml_down
 
 def R_ml_down(B,P_m_down,h_ml_worst): #eqation number 7
-    temp1=h_ml_worst*P_m_down
+    temp1=np.min(h_ml_worst*P_m_down) # Consider if min is the correct aggregation
+    if (1+temp1) <= 0:
+        return 0  # Return 0 if log argument is non-positive to avoid error
     return B*math.log2(1+temp1)
 
 def h_ml_worst(h_kml_down,sigma_km): #eqation number 8
     return h_kml_down/(sigma_km) # it will return the sigal value which is minimum of all
-                                    # the value for each itaration
+                                     # the value for each itaration
 
 def calculate_exp_i_theta(theta): # part of equation 8
   return cmath.exp(1j * theta)
  # 1j represents the imaginary unit in Python
 
 def h_kml_down(Angle,h_l_m,h_l_km): # part of equation 8
-
     result=[]
     for i in range(len(Angle)):
-        theta_radians = math.radians(Angle[i])
+        theta_radians = math.radians(Angle.iloc[i]) # Use iloc for position-based indexing
         results= calculate_exp_i_theta(theta_radians)
         result.append(results)
 
     diagonal=np.diag(result)
     # Ensure h_l_m and h_l_km are correctly formatted as numpy arrays
-    # h_l_m_np = np.array(eval(h_l_m.values[0]))  # Convert string to numpy array
-    # h_l_km_np = np.array(eval(h_l_km.values[0])) # Convert string to numpy array
+    h_l_m_np = h_l_m.to_numpy() # Convert Series to numpy array
+    h_l_km_np = h_l_km.to_numpy() # Convert Series to numpy array
+    if h_l_m_np.ndim == 1:
+        h_l_m_np = h_l_m_np.reshape(1, -1) # Reshape to 2D if necessary
+    if h_l_km_np.ndim == 1:
+        h_l_km_np = h_l_km_np.reshape(-1, 1) # Reshape to 2D if necessary
 
-    a=np.dot(h_l_m,diagonal) # Use numpy arrays for dot product
-    b=np.dot(a,h_l_km)       # Use numpy arrays for dot product
-    final=abs(b)
+
+    a=np.dot(h_l_m_np,diagonal) # Use numpy arrays for dot product
+    b=np.dot(a,h_l_km_np)       # Use numpy arrays for dot product
+    final=abs(b[0][0]) # Take absolute value and ensure it's a scalar
     return (final**2)
 
 def R_kml_up(B,P_km_up,h_kml_up,Sub,sigma_m): #eqation number 4
     temp1=(P_km_up*h_kml_up)/ (Sub+(sigma_m))
     return B*math.log2(1+temp1)
-
+#this is inside the equation 4 have to take summation of h_i_up and P_i_up
+def sub(P_i_up,h_il_up):
+    return P_i_up*h_il_up
 
 
 #_______________________________________________________________________________________________
 # Genetic Algorithm Parameters
 num_bs = 5
 
-num_generation = 100 # Number of generations
+num_generation = 50 # Number of generations
 num_uav_irs = 8
 population_size = 50 # Population size for GA
 all_best_combinations = []
@@ -151,11 +167,23 @@ for l in range(num_bs):
         V_lm_hfly_value = V_lm_hfly.values[k]
         D_l_hfly_value = D_l_hfly
         Wl_value = Wl
+        Sub_value=0
+        for i in range(num_population):
+            h_il_up_value=h_kml_down(Angle_UP_df.iloc[i, :],g_l_m_df.iloc[i, :],g_l_km_df.iloc[i, :]) # Pass Series
+            Sub_value+=sub(P_km_up[i],h_il_up_value)
 
         # Initialize population
         for i in range(population_size):
             f_km_value = f_km[i]
             P_km_up_value = P_km_up.values[i]
+
+            Angle_row = Angle_df.iloc[i, :] # Get row as Series
+            h_l_m_row = h_l_m_df.iloc[i, :] # Get row as Series
+            h_l_km_row = h_l_km_df.iloc[i, :] # Get row as Series
+            Angle1_row = Angle_UP_df.iloc[i, :] # Get row as Series
+            g_l_m_row = g_l_m_df.iloc[i, :] # Get row as Series
+            g_l_km_row = g_l_km_df.iloc[i, :] # Get row as Series
+
 
             # Calculate Bh and p_l_b
             Bh = (1 - 2.2558 * pow(10, 4) * H_value)
@@ -169,16 +197,16 @@ for l in range(num_bs):
 
             # Calculate time and energy values
             T_l_vfly_value = H_value / V_lm_vfly_value
-            T_l_hfly_value = D_l_hfly_value * V_lm_hfly_value
+            T_l_hfly_value = D_l_hfly_value / V_lm_hfly_value # Corrected: D_l_hfly / V_lm_hfly
             E_ml_har_value = P_m_har_value * T_m_har_value
-            h_kml_down_value=h_kml_down(Angle,h_l_m,h_l_km)
+            h_kml_down_value=h_kml_down(Angle_row,h_l_m_row,h_l_km_row) # Pass Series
             h_ml_worst_value=h_ml_worst(h_kml_down_value,sigma_km)
             R_ml_down_value=R_ml_down(B,P_m_down_value,h_ml_worst_value)
             T_ml_down_value=Dm/R_ml_down_value
             E_ml_down_value = P_m_down_value * T_ml_down_value
             T_km_com_value = D_km / f_km_value
-            h_kml_up_value=h_kml_down(Angle1,g_l_m,g_l_km)
-            Sub_value=20 #this is inside the equation 4 have to take summation of h_i_up and P_i_up
+            h_kml_up_value=h_kml_down(Angle1_row,g_l_m_row,g_l_km_row) # Pass Series, using same function, might need different one if logic is different
+
             R_kml_up_value=R_kml_up(B,P_km_up_value,h_kml_up_value,Sub_value,sigma_km)
             T_km_up_value=Dm/R_kml_up_value # equation number 5
             T_lm_hov_value = T_lm_hov(T_km_com_value, T_km_up_value, T_ml_down_value)
@@ -252,8 +280,18 @@ for l in range(num_bs):
 
                     # Calculate time and energy values
                     T_l_vfly_value = H_value / V_lm_vfly_value
-                    T_l_hfly_value = D_l_hfly_value * V_lm_hfly_value
+                    T_l_hfly_value = D_l_hfly_value / V_lm_hfly_value # Corrected: D_l_hfly / V_lm_hfly
                     E_ml_har_value = P_m_har_value * T_m_har_value
+                    Angle_row_compute = Angle_df.iloc[i, :]  # Use same angle row as parent - or you can introduce angle variation here if needed in GA
+                    h_l_m_row_compute = h_l_m_df.iloc[i, :]
+                    h_l_km_row_compute = h_l_km_df.iloc[i, :]
+
+                    h_kml_down_value_compute=h_kml_down(Angle_row_compute,h_l_m_row_compute,h_l_km_row_compute) # Using original Angle_row, h_l_m_row, h_l_km_row for child as well - might need to be based on child data if angles are also part of optimization
+                    h_ml_worst_value=h_ml_worst(h_kml_down_value_compute,sigma_km)
+                    R_ml_down_value=R_ml_down(B,P_m_down_value,h_ml_worst_value)
+                    if R_ml_down_value <= 0: # check if R_ml_down_value is zero or negative
+                        R_ml_down_value = 1e-9 # Assign a small positive value to avoid division by zero
+                    T_ml_down_value=Dm/R_ml_down_value
                     E_ml_down_value = P_m_down_value * T_ml_down_value
                     T_km_com_value = D_km / f_km_value
                     T_lm_hov_value = T_lm_hov(T_km_com_value, T_km_up_value, T_ml_down_value)
@@ -265,22 +303,22 @@ for l in range(num_bs):
                     # Calculate fitness
                     fitness_value = Fitness(E_ml_har_value, E_ml_down_value, E_ml_UAV_value)
                     current_data = {
-                        'P_m_down_value': P_m_down_value,
-                        'P_m_har_value': P_m_har_value,
-                        'T_m_har_value': T_m_har_value,
-                        'T_ml_down_value': T_ml_down_value,
-                        'f_km_value': f_km_value,
-                        'T_km_up_value': T_km_up_value,
-                        'V_lm_vfly_value': V_lm_vfly_value,
-                        'V_lm_hfly_value': V_lm_hfly_value,
-                        'P_km_up_value':P_km_up_value,
-                        'h_kml_down_value':h_kml_down_value,
-                        'T_km_com_value':T_km_com_value
-                        }
+                            'P_m_down_value': P_m_down_value,
+                            'P_m_har_value': P_m_har_value,
+                            'T_m_har_value': T_m_har_value,
+                            'T_ml_down_value': T_ml_down_value,
+                            'f_km_value': f_km_value,
+                            'T_km_up_value': T_km_up_value,
+                            'V_lm_vfly_value': V_lm_vfly_value,
+                            'V_lm_hfly_value': V_lm_hfly_value,
+                            'P_km_up_value':P_km_up_value,
+                            'h_kml_down_value':h_kml_down_value_compute, # Use compute value here
+                            'T_km_com_value':T_km_com_value
+                            }
                     if V_lm_hfly_value>0 and T_m_har_value>0 and T_ml_down_value>0 and T_km_up_value>0:
                         return fitness_value, current_data
                     else:
-                        return  float('inf'),float('inf')
+                        return  float('inf'),{} # Return empty dict instead of float('inf') for data
 
                 child_fitness, child_data1 = compute_fitness(child_data)
                 child_population.append({'fitness': child_fitness, 'data': child_data1})
@@ -293,7 +331,7 @@ for l in range(num_bs):
             # print(population[0])
 
         best_individual_pair = population[0].copy()
-        best_individual_pair['generation'] = j + 1
+        best_individual_pair['generation'] = j + 1 # Use last j from loop, corrected index
         best_individual_pair['type'] = 'GA'
         best_individual_pair['bs_index'] = l
         best_individual_pair['uav_index'] = k
@@ -334,12 +372,12 @@ while unassigned_bs and unassigned_uavs:
         for k in unassigned_uavs:
             if l in combination_lookup and k in combination_lookup[l]:
                 combination = combination_lookup[l][k]
-                if combination['best_individual']['fitness'] < best_fitness_for_bs:
-                    best_fitness_for_bs = combination['best_individual']['fitness']
+                if combination['best_fitness'] < best_fitness_for_bs: # Use 'best_fitness' instead of 'best_individual']['fitness']
+                    best_fitness_for_bs = combination['best_fitness']
                     best_combination_for_bs = combination
 
         if best_combination_for_bs:
-            if best_combination_overall is None or best_combination_for_bs['best_individual']['fitness'] < (best_assignments[-1]['best_individual']['fitness'] if best_assignments else float('inf')): # Corrected condition here
+            if best_combination_overall is None or best_combination_for_bs['best_fitness'] < best_combination_overall['best_fitness']: # Compare with current best overall
                 best_combination_overall = best_combination_for_bs
 
     if best_combination_overall:
@@ -357,8 +395,8 @@ for assignment in best_assignments:
     print(f"  UAV Index: {assignment['uav_index']}")
     best_ind = assignment['best_individual']
     print(f"  Best Individual:")
-    print(f"    Generation: {best_ind['generation']}, Type: {best_ind['type']}")
-    print(f"    Fitness: {best_ind['fitness']:.4f}") # Print current best fitness only
+    print(f"   Generation: {best_ind['generation']}, Type: {best_ind['type']}")
+    print(f"   Fitness: {best_ind['fitness']:.4f}") # Print current best fitness only
     for key, value in best_ind['data'].items():
         print(f"    {key}: {value:.4f}")
     print("-" * 20)

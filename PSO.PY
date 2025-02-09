@@ -1,5 +1,5 @@
 # coding: utf-8
-#update the previous algorithm
+#update the previous algorithm using PSO
 import pandas as pd
 import numpy as np
 import random
@@ -7,9 +7,6 @@ import math
 from numpy import random
 import cmath
 import matplotlib.pyplot as plt
-
-
-
 
 # Load datasets related to Base Stations, UAVs, and Clients
 base = pd.read_csv(r'BS_data.csv')
@@ -98,7 +95,7 @@ def h_ml_worst(h_kml_down,sigma_km): #eqation number 8
                                     # the value for each itaration
 
 def calculate_exp_i_theta(theta): # part of equation 8
-  return cmath.exp(1j * theta)
+    return cmath.exp(1j * theta)
  # 1j represents the imaginary unit in Python
 
 def h_kml_down(Angle,h_l_m,h_l_km): # part of equation 8
@@ -121,21 +118,28 @@ def h_kml_down(Angle,h_l_m,h_l_km): # part of equation 8
 
 def R_kml_up(B,P_km_up,h_kml_up,Sub,sigma_m): #eqation number 4
     temp1=(P_km_up*h_kml_up)/ (Sub+(sigma_m))
-    return B*math.log2(1+temp1)
-
+    log_arg = 1 + temp1
+    if log_arg <= 0:
+        log_arg = 1e-9  # Use a very small positive value if it's not positive
+    return B*math.log2(log_arg)
+    
 
 
 #_______________________________________________________________________________________________
-# Genetic Algorithm Parameters
+# Particle Swarm Optimization Parameters
 num_bs = 5
-
-num_generation = 100 # Number of generations
+num_generation = 30  # Number of iterations for PSO
 num_uav_irs = 8
-population_size = 50 # Population size for GA
+population_size = 50  # Swarm size for PSO
 all_best_combinations = []
 all_best_individuals = []
 
-# Main Genetic Algorithm Loop
+# PSO parameters
+inertia_weight = 0.5
+cognitive_coefficient = 1.5
+social_coefficient = 1.5
+
+# Main Particle Swarm Optimization Loop
 for l in range(num_bs):
     all_best_individuals_bs = []
     P_m_har_value = P_m_har.values[l]
@@ -146,167 +150,130 @@ for l in range(num_bs):
     for k in range(num_uav_irs):
         best_fitness = float('inf')
         best_individual = {}
-        population = []
+        swarm = []
+        global_best_fitness = float('inf')
+        global_best_position = None
         V_lm_vfly_value = V_lm_vfly.values[k]
         V_lm_hfly_value = V_lm_hfly.values[k]
         D_l_hfly_value = D_l_hfly
         Wl_value = Wl
 
-        # Initialize population
-        for i in range(population_size):
-            f_km_value = f_km[i]
-            P_km_up_value = P_km_up.values[i]
+        # Initialize swarm
+        for _ in range(population_size):
+            f_km_value = random.choice(f_km)
+            P_km_up_value = random.choice(P_km_up.values)
 
-            # Calculate Bh and p_l_b
-            Bh = (1 - 2.2558 * pow(10, 4) * H_value)
-            Bh = max(1, Bh)
-            p_l_b = (delta / 8) * Bh * Ar * s * pow(V_tip, 3)
+            # Initialize position and velocity for each particle
+            position = {
+                'f_km_value': f_km_value,
+                'P_km_up_value': P_km_up_value,
+                'V_lm_vfly_value': V_lm_vfly_value, # Fixed for each UAV index
+                'V_lm_hfly_value': V_lm_hfly_value # Fixed for each UAV index
+            }
+            velocity = {
+                'f_km_value': 0.0,
+                'P_km_up_value': 0.0
+            }
+            personal_best_fitness = float('inf')
+            personal_best_position = position.copy()
 
-            # Calculate power values
-            P_lm_blade_value = P_lm_blade(Nr, p_l_b, V_tip, V_lm_hfly_value)
-            P_lm_fuselage_value = P_lm_fuselage(Cd, Af, Bh, V_lm_hfly_value)
-            P_lm_induced_value = P_lm_induced(Nr, Bh, Ar, Wl_value, V_lm_hfly_value)
-
-            # Calculate time and energy values
-            T_l_vfly_value = H_value / V_lm_vfly_value
-            T_l_hfly_value = D_l_hfly_value * V_lm_hfly_value
-            E_ml_har_value = P_m_har_value * T_m_har_value
-            h_kml_down_value=h_kml_down(Angle,h_l_m,h_l_km)
-            h_ml_worst_value=h_ml_worst(h_kml_down_value,sigma_km)
-            R_ml_down_value=R_ml_down(B,P_m_down_value,h_ml_worst_value)
-            T_ml_down_value=Dm/R_ml_down_value
-            E_ml_down_value = P_m_down_value * T_ml_down_value
-            T_km_com_value = D_km / f_km_value
-            h_kml_up_value=h_kml_down(Angle1,g_l_m,g_l_km)
-            Sub_value=20 #this is inside the equation 4 have to take summation of h_i_up and P_i_up
-            R_kml_up_value=R_kml_up(B,P_km_up_value,h_kml_up_value,Sub_value,sigma_km)
-            T_km_up_value=Dm/R_kml_up_value # equation number 5
-            T_lm_hov_value = T_lm_hov(T_km_com_value, T_km_up_value, T_ml_down_value)
-            P_l_hov_value = P_l_hov(Wl_value, p_l_b, Nr, Ar, Bh)
-            P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
-            P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
-            E_ml_UAV_value = E_ml_UAV(P_l_vfly_value, T_l_vfly_value, P_lm_hfly_value, T_l_hfly_value, P_l_hov_value, T_lm_hov_value)
-
-            # Calculate fitness
-            result_fitness = Fitness(E_ml_har_value, E_ml_down_value, E_ml_UAV_value)
-
-            # Store initial population data
-            population.append({
-                'fitness': result_fitness,
-                'data':  {
-                    'P_m_down_value': P_m_down_value,
-                    'P_m_har_value': P_m_har_value,
-                    'T_m_har_value': T_m_har_value,
-                    'T_ml_down_value': T_ml_down_value,
-                    'f_km_value': f_km_value,
-                    'T_km_up_value': T_km_up_value,
-                    'V_lm_vfly_value': V_lm_vfly_value,
-                    'V_lm_hfly_value': V_lm_hfly_value,
-                    'P_km_up_value':P_km_up_value,
-                    'h_kml_down_value':h_kml_down_value,
-                    'T_km_com_value':T_km_com_value
-                    }
+            swarm.append({
+                'position': position,
+                'velocity': velocity,
+                'personal_best_fitness': personal_best_fitness,
+                'personal_best_position': personal_best_position
             })
 
         generations_data = []
         for j in range(num_generation):
-            child_population = []
-            for i in range(0, population_size, 2): # Loop through population with step of 2
-                # Crossover
-                parent1 = population[i]
-                parent2 = population[i+1]
-                child_data = {}
-                for key in parent1['data']:
-                    child_data[key] = parent1['data'][key] * 0.6 + parent2['data'][key] * (1 - 0.6)
+            for particle in swarm:
+                # Calculate Bh and p_l_b
+                Bh = (1 - 2.2558 * pow(10, 4) * H_value)
+                Bh = max(1, Bh)
+                p_l_b = (delta / 8) * Bh * Ar * s * pow(V_tip, 3)
 
-                # Mutation
-                u = np.random.uniform(0, 1, 1)[0]
-                P_mutation = 0.5
-                if u < P_mutation:
-                    for key in child_data:
-                        child_data[key] += random.normal(loc=0, scale=0.1, size=(1))[0]
+                # Get current position values
+                f_km_value = particle['position']['f_km_value']
+                P_km_up_value = particle['position']['P_km_up_value']
+                V_lm_vfly_value = particle['position']['V_lm_vfly_value']
+                V_lm_hfly_value = particle['position']['V_lm_hfly_value']
 
-                # Compute child fitness
-                def compute_fitness(data):
-                    P_m_down_value = data['P_m_down_value']
-                    P_m_har_value = data['P_m_har_value']
-                    T_m_har_value = data['T_m_har_value']
-                    T_ml_down_value = data['T_ml_down_value']
-                    f_km_value = data['f_km_value']
-                    T_km_up_value = data['T_km_up_value']
-                    V_lm_vfly_value = data['V_lm_vfly_value']
-                    V_lm_hfly_value = data['V_lm_hfly_value']
-                    P_km_up_value=data['P_km_up_value']
-                    h_kml_down_value=data['h_kml_down_value']
-                    T_km_com_value=data['T_km_com_value']
 
-                    # Calculate Bh and p_l_b for child
-                    Bh = (1 - 2.2558 * pow(10, 4) * H_value)
-                    Bh = max(1, Bh)
-                    p_l_b = (delta / 8) * Bh * Ar * s * pow(V_tip, 3)
+                # Calculate power values
+                P_lm_blade_value = P_lm_blade(Nr, p_l_b, V_tip, V_lm_hfly_value)
+                P_lm_fuselage_value = P_lm_fuselage(Cd, Af, Bh, V_lm_hfly_value)
+                P_lm_induced_value = P_lm_induced(Nr, Bh, Ar, Wl_value, V_lm_hfly_value)
 
-                    # Calculate power values
-                    P_lm_blade_value = P_lm_blade(Nr, p_l_b, V_tip, V_lm_hfly_value)
-                    P_lm_fuselage_value = P_lm_fuselage(Cd, Af, Bh, V_lm_hfly_value)
-                    P_lm_induced_value = P_lm_induced(Nr, Bh, Ar, Wl_value, V_lm_hfly_value)
+                # Calculate time and energy values
+                T_l_vfly_value = H_value / V_lm_vfly_value
+                T_l_hfly_value = D_l_hfly_value * V_lm_hfly_value
+                E_ml_har_value = P_m_har_value * T_m_har_value
+                h_kml_down_value=h_kml_down(Angle,h_l_m,h_l_km)
+                h_ml_worst_value=h_ml_worst(h_kml_down_value,sigma_km)
+                R_ml_down_value=R_ml_down(B,P_m_down_value,h_ml_worst_value)
+                T_ml_down_value=Dm/R_ml_down_value
+                E_ml_down_value = P_m_down_value * T_ml_down_value
+                T_km_com_value = D_km / f_km_value
+                h_kml_up_value=h_kml_down(Angle1,g_l_m,g_l_km)
+                Sub_value=20 #this is inside the equation 4 have to take summation of h_i_up and P_i_up
+                R_kml_up_value=R_kml_up(B,P_km_up_value,h_kml_up_value,Sub_value,sigma_km)
+                T_km_up_value=Dm/R_kml_up_value # equation number 5
+                T_lm_hov_value = T_lm_hov(T_km_com_value, T_km_up_value, T_ml_down_value)
+                P_l_hov_value = P_l_hov(Wl_value, p_l_b, Nr, Ar, Bh)
+                P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
+                P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
+                E_ml_UAV_value = E_ml_UAV(P_l_vfly_value, T_l_vfly_value, P_lm_hfly_value, T_l_hfly_value, P_l_hov_value, T_lm_hov_value)
 
-                    # Calculate time and energy values
-                    T_l_vfly_value = H_value / V_lm_vfly_value
-                    T_l_hfly_value = D_l_hfly_value * V_lm_hfly_value
-                    E_ml_har_value = P_m_har_value * T_m_har_value
-                    E_ml_down_value = P_m_down_value * T_ml_down_value
-                    T_km_com_value = D_km / f_km_value
-                    T_lm_hov_value = T_lm_hov(T_km_com_value, T_km_up_value, T_ml_down_value)
-                    P_l_hov_value = P_l_hov(Wl_value, p_l_b, Nr, Ar, Bh)
-                    P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
-                    P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
-                    E_ml_UAV_value = E_ml_UAV(P_l_vfly_value, T_l_vfly_value, P_lm_hfly_value, T_l_hfly_value, P_l_hov_value, T_lm_hov_value)
+                # Calculate fitness
+                current_fitness = Fitness(E_ml_har_value, E_ml_down_value, E_ml_UAV_value)
 
-                    # Calculate fitness
-                    fitness_value = Fitness(E_ml_har_value, E_ml_down_value, E_ml_UAV_value)
-                    current_data = {
-                        'P_m_down_value': P_m_down_value,
-                        'P_m_har_value': P_m_har_value,
-                        'T_m_har_value': T_m_har_value,
-                        'T_ml_down_value': T_ml_down_value,
-                        'f_km_value': f_km_value,
-                        'T_km_up_value': T_km_up_value,
-                        'V_lm_vfly_value': V_lm_vfly_value,
-                        'V_lm_hfly_value': V_lm_hfly_value,
-                        'P_km_up_value':P_km_up_value,
-                        'h_kml_down_value':h_kml_down_value,
-                        'T_km_com_value':T_km_com_value
-                        }
-                    if V_lm_hfly_value>0 and T_m_har_value>0 and T_ml_down_value>0 and T_km_up_value>0:
-                        return fitness_value, current_data
-                    else:
-                        return  float('inf'),float('inf')
+                # Update personal best
+                if current_fitness < particle['personal_best_fitness']:
+                    particle['personal_best_fitness'] = current_fitness
+                    particle['personal_best_position'] = particle['position'].copy()
 
-                child_fitness, child_data1 = compute_fitness(child_data)
-                child_population.append({'fitness': child_fitness, 'data': child_data1})
+                # Update global best
+                if current_fitness < global_best_fitness:
+                    global_best_fitness = current_fitness
+                    global_best_position = particle['position'].copy()
 
-            # Create new population
-            new_population = population + child_population
-            new_population = sorted(new_population, key=lambda x: x['fitness'])
-            population = new_population[:population_size]
-            generations_data.append(population[0].copy())
-            # print(population[0])
+            generations_data.append({'fitness': global_best_fitness, 'data': global_best_position.copy()})
 
-        best_individual_pair = population[0].copy()
-        best_individual_pair['generation'] = j + 1
-        best_individual_pair['type'] = 'GA'
+            # Update particle velocities and positions
+            for particle in swarm:
+                # Update velocities
+                particle['velocity']['f_km_value'] = (
+                    inertia_weight * particle['velocity']['f_km_value'] +
+                    cognitive_coefficient * random.random() * (particle['personal_best_position']['f_km_value'] - particle['position']['f_km_value']) +
+                    social_coefficient * random.random() * (global_best_position['f_km_value'] - particle['position']['f_km_value'])
+                )
+                particle['velocity']['P_km_up_value'] = (
+                    inertia_weight * particle['velocity']['P_km_up_value'] +
+                    cognitive_coefficient * random.random() * (particle['personal_best_position']['P_km_up_value'] - particle['position']['P_km_up_value']) +
+                    social_coefficient * random.random() * (global_best_position['P_km_up_value'] - particle['position']['P_km_up_value'])
+                )
+
+                # Update positions
+                particle['position']['f_km_value'] += particle['velocity']['f_km_value']
+                particle['position']['P_km_up_value'] += particle['velocity']['P_km_up_value']
+
+
+        best_individual_pair = generations_data[-1].copy() # Take the best from the last generation
+        best_individual_pair['generation'] = j + 1 #Actually it is last generation number, but for consistency let's keep j+1
+        best_individual_pair['type'] = 'PSO'
         best_individual_pair['bs_index'] = l
         best_individual_pair['uav_index'] = k
         all_best_individuals_bs.append(best_individual_pair)
 
+
         all_best_combinations.append({
             'bs_index': l,
             'uav_index': k,
-            'best_fitness': population[0]['fitness'],
+            'best_fitness': global_best_fitness,
             'best_individual': best_individual_pair,
             'generation_fitness': [gen['fitness'] for gen in generations_data]
         })
-        # print(f"Best Fitness for BS {l}, UAV {k}: {population[0]['fitness']:.4f}")
+        # print(f"Best Fitness for BS {l}, UAV {k}: {global_best_fitness:.4f}")
 
     # Find best individual for current BS across all UAVs
     best_individual_for_bs = min(all_best_individuals_bs, key=lambda x: x['fitness'])
@@ -348,7 +315,7 @@ while unassigned_bs and unassigned_uavs:
         unassigned_uavs.remove(best_combination_overall['uav_index'])
 
 # Print and Plotting
-print("\n--- Best Unique UAV Assignments (Auction Based Method) ---")
+print("\n--- Best Unique UAV Assignments (Auction Based Method with PSO) ---")
 best_pair_for_plot = None
 min_fitness_for_plot = float('inf')
 
@@ -357,10 +324,10 @@ for assignment in best_assignments:
     print(f"  UAV Index: {assignment['uav_index']}")
     best_ind = assignment['best_individual']
     print(f"  Best Individual:")
-    print(f"    Generation: {best_ind['generation']}, Type: {best_ind['type']}")
-    print(f"    Fitness: {best_ind['fitness']:.4f}") # Print current best fitness only
+    print(f"   Generation: {best_ind['generation']}, Type: {best_ind['type']}")
+    print(f"   Fitness: {best_ind['fitness']:.4f}") # Print current best fitness only
     for key, value in best_ind['data'].items():
-        print(f"    {key}: {value:.4f}")
+        print(f"   {key}: {value:.4f}")
     print("-" * 20)
 
     if assignment['best_individual']['fitness'] < min_fitness_for_plot:
@@ -387,9 +354,9 @@ if best_pair_for_plot:
 
     plt.figure(figsize=(10, 6))
     plt.plot(generations, fitness_history_best_pair, marker='o', linestyle='-')
-    plt.xlabel('Generation')
+    plt.xlabel('Iteration')
     plt.ylabel('Fitness Value')
-    plt.title(f'Fitness Improvement Over Generations for Best BS-UAV Pair (BS {best_pair_for_plot['bs_index']}, UAV {best_pair_for_plot['uav_index']})')
+    plt.title(f'Fitness Improvement Over Iterations for Best BS-UAV Pair (BS {best_pair_for_plot['bs_index']}, UAV {best_pair_for_plot['uav_index']})')
     plt.grid(True)
     plt.xticks(generations)
     plt.tight_layout()
@@ -416,8 +383,8 @@ generation_indices = list(range(1, num_generation + 1))
 
 plt.figure(figsize=(10, 6))
 plt.plot(generation_indices, sum_fitness_per_generation, marker='o', linestyle='-')
-plt.title('Sum of Best Fitness Values Across Generations')
-plt.xlabel('Generation Number')
+plt.title('Sum of Best Fitness Values Across Iterations (PSO)')
+plt.xlabel('Iteration Number')
 plt.ylabel('Sum of Best Fitness Values')
 plt.grid(True)
 plt.xticks(generation_indices)

@@ -193,19 +193,25 @@ df2.to_csv('BS_data.csv',index=True)
 # df4=pd.DataFrame({'T_km_com':T_km_com,'T_km_up':T_km_up})
 # df4.to_csv('people_data.csv',index=True)
 
-#calculating the h_kml_down
-#for example we take reflecting surface is 50
+# calculating the h_kml_down
+# for example we take reflecting surface is 50
 # num_of_irs=50
-# Angle=np.random.uniform(0,180, num_of_irs)
+# num_of_people=50
+# Angle=np.random.uniform(0,180,(num_of_irs,num_of_people))
 # # print(Angle)
-# h_l_km=np.random.uniform(0,10, num_of_irs)
-# h_l_m=np.random.uniform(0,10, num_of_irs)
+# h_l_km=np.random.uniform(0,10,(num_of_irs,num_of_people))
+# h_l_m=np.random.uniform(0,10, (num_of_irs,num_of_people))
 
-# P_km_up=np.random.uniform(0,10,num_of_irs)
 
-# df5=pd.DataFrame({'Angle':Angle,'h_l_km':h_l_km,'h_l_m':h_l_m,'P_km_up':P_km_up})
-# df5.to_csv('IRS_data_up.csv',index=True)
 
+# df5=pd.DataFrame(Angle)
+# df5.to_csv('Angle.csv',index=False)
+
+# df6=pd.DataFrame(h_l_km)
+# df6.to_csv('h_l_km.csv',index=False)
+
+# df5=pd.DataFrame(h_l_m)
+# df5.to_csv('h_l_m.csv',index=False)
 
 # def calculate_exp_i_theta(theta):
 #   return cmath.exp(1j * theta) 
@@ -226,10 +232,12 @@ df2.to_csv('BS_data.csv',index=True)
 #   final=abs(b)
 #   return final**2
 
-# final=h_kml_down(Angle,h_l_m,h_l_km)
+# final=h_kml_down(Angle[0,:],h_l_m[0,:],h_l_km[0,:])
 
 # print(final)
 
+f_km_up=np.random.uniform(0.1,1,50)
 
-
+df5=pd.DataFrame(f_km_up)
+df5.to_csv('f_km.csv',index=False)
 

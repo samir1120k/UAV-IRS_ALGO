@@ -8,8 +8,8 @@ uav = pd.read_csv(r'UAV_data.csv')
 people = pd.read_csv(r'people_data.csv')
 
 # Constants
-Wl = [4, 5, 6, 7, 8, 9, 10, 6]
-H = base['H']
+Wl = 35.28
+H = 20
 P_m_har = base['P_m_har']
 T_m_har = base['T_m_har']
 P_m_down = base['P_m_down']
