@@ -16,14 +16,18 @@ people = pd.read_csv(r'people_data.csv')
 IRS=pd.read_csv(r'IRS_data.csv')
 IRS_UP=pd.read_csv(r'IRS_data_up.csv')
 
-Angle_df=pd.read_csv(r'Angle.csv') # Renamed to avoid overwriting
-h_l_km_df=pd.read_csv(r'h_l_km.csv') # Renamed to avoid overwriting
-h_l_m_df=pd.read_csv(r'h_l_m.csv') # Renamed to avoid overwriting
+Angle_df=pd.read_csv(r'Angle.csv') # number of IRS is 50 store in each column
+h_l_km_df=pd.read_csv(r'h_l_km.csv') # number of IRS is 50 store in each column
+h_l_m_df=pd.read_csv(r'h_l_m.csv') # number of IRS is 50 store in each column
 
-Angle_UP_df=pd.read_csv(r'Angle.csv') # Renamed to avoid overwriting and using Angle_UP, corrected filename
-g_l_km_df=pd.read_csv(r'h_l_km.csv') # Renamed to avoid overwriting and using g_l_km_df, corrected filename
-g_l_m_df=pd.read_csv(r'h_l_m.csv') # Renamed to avoid overwriting and using g_l_m_df, corrected filename
+Angle_UP_df=pd.read_csv(r'Angle1.csv') # number of IRS is 50 store in each column
+g_l_km_df=pd.read_csv(r'h_l_km1.csv') # number of IRS is 50 store in each column
+g_l_m_df=pd.read_csv(r'h_l_m1.csv') # number of IRS is 50 store in each column
 
+Angle_har_df=pd.read_csv(r'Angle2.csv') # number of IRS is 50 store in each column
+f_l_km_df=pd.read_csv(r'h_l_km2.csv') # number of IRS is 50 store in each column
+f_l_m_df=pd.read_csv(r'h_l_m2.csv') # number of IRS is 50 store in each column
+f_km1=pd.read_csv(r'f_km.csv')
 
 # Constants
 Wl = 35.28
@@ -33,18 +37,21 @@ T_m_har = base['T_m_har']
 P_m_down = base['P_m_down']
 # T_ml_down = base['T_ml_down']
 # T_km_com = people['T_km_com']
-f_km=np.random.uniform(0,10, 50) #Frequency of local computing
+f_km=f_km1['0']
 # T_km_up = people['T_km_up']
 V_lm_vfly = uav['V_lm_vfly']
 V_lm_hfly = uav['V_lm_hfly']
 D_l_hfly = 100
-# Angle=IRS['Angle'] # Not needed as we load from CSV now
-# h_l_km=IRS['h_l_km'] # Not needed as we load from CSV now
-# h_l_m=IRS['h_l_m'] # Not needed as we load from CSV now
+eta=10
+kappa=0.5
+
 P_km_up=IRS_UP['P_km_up']
-Angle1_col=IRS_UP['Angle'] # Renamed to avoid confusion with Angle dataframe
-g_l_km_col=IRS_UP['h_l_km'] # Renamed
-g_l_m_col=IRS_UP['h_l_m'] # Renamed
+# Angle1_col=IRS_UP['Angle'] # number of irs element is 50
+# g_l_km_col=IRS_UP['h_l_km'] # number of irs elemnt is 50
+# g_l_m_col=IRS_UP['h_l_m'] # number of irs element is 50
+p_max=10
+p_km_max=10
+T_m=10
 
 
 # Additional constants for calculations
@@ -59,6 +66,7 @@ D_km = 0.5
 Dm=0.49
 B=10 #MHz
 sigma_km=10**(-13)
+
 num_population=50
 
 # Fitness function to calculate total energy consumption
@@ -140,12 +148,20 @@ def R_kml_up(B,P_km_up,h_kml_up,Sub,sigma_m): #eqation number 4
 def sub(P_i_up,h_il_up):
     return P_i_up*h_il_up
 
+def E_km_com(f_km,T_km_com):
+    return eta*(10**(-28))*(f_km**3)*T_km_com
+
+def E_kml_up(P_km_up,T_km_up):
+    return P_km_up*T_km_up
+
+def E_kml_har(P_m_har,T_m_har,h_km_har):
+    return kappa*P_m_har*T_m_har*h_km_har
 
 #_______________________________________________________________________________________________
 # Genetic Algorithm Parameters
 num_bs = 5
-
-num_generation = 50 # Number of generations
+num_irs_ele=50
+num_generation = 30 # Number of generations
 num_uav_irs = 8
 population_size = 50 # Population size for GA
 all_best_combinations = []
@@ -250,9 +266,10 @@ for l in range(num_bs):
                 # Mutation
                 u = np.random.uniform(0, 1, 1)[0]
                 P_mutation = 0.5
+                variance=1
                 if u < P_mutation:
                     for key in child_data:
-                        child_data[key] += random.normal(loc=0, scale=0.1, size=(1))[0]
+                        child_data[key] += random.normal(loc=0, scale=variance, size=(1))[0]
 
                 # Compute child fitness
                 def compute_fitness(data):
@@ -286,6 +303,10 @@ for l in range(num_bs):
                     h_l_m_row_compute = h_l_m_df.iloc[i, :]
                     h_l_km_row_compute = h_l_km_df.iloc[i, :]
 
+                    Angle1_row_compute = Angle_har_df.iloc[i, :]  # Use same angle row as parent - or you can introduce angle variation here if needed in GA
+                    f_l_m_row_compute = f_l_m_df.iloc[i, :]
+                    f_l_km_row_compute = f_l_km_df.iloc[i, :]
+
                     h_kml_down_value_compute=h_kml_down(Angle_row_compute,h_l_m_row_compute,h_l_km_row_compute) # Using original Angle_row, h_l_m_row, h_l_km_row for child as well - might need to be based on child data if angles are also part of optimization
                     h_ml_worst_value=h_ml_worst(h_kml_down_value_compute,sigma_km)
                     R_ml_down_value=R_ml_down(B,P_m_down_value,h_ml_worst_value)
@@ -299,6 +320,10 @@ for l in range(num_bs):
                     P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
                     P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
                     E_ml_UAV_value = E_ml_UAV(P_l_vfly_value, T_l_vfly_value, P_lm_hfly_value, T_l_hfly_value, P_l_hov_value, T_lm_hov_value)
+                    h_kml_har_value_compute=h_kml_down(Angle1_row_compute,f_l_m_row_compute,f_l_km_row_compute) # Using original Angle_row, h_l_m_row, h_l_km_row for child as well - might need to be based on child data if angles are also part of optimization
+                    E_kml_har_value=E_kml_har(P_m_har_value,T_m_har_value,h_kml_har_value_compute)
+                    E_kml_com_value = E_km_com(f_km_value, T_km_com_value)
+                    E_kml_up_value=E_kml_up(P_km_up_value,T_km_up_value)
 
                     # Calculate fitness
                     fitness_value = Fitness(E_ml_har_value, E_ml_down_value, E_ml_UAV_value)
@@ -315,7 +340,7 @@ for l in range(num_bs):
                             'h_kml_down_value':h_kml_down_value_compute, # Use compute value here
                             'T_km_com_value':T_km_com_value
                             }
-                    if V_lm_hfly_value>0 and T_m_har_value>0 and T_ml_down_value>0 and T_km_up_value>0:
+                    if V_lm_hfly_value>0 and T_m_har_value>0 and T_ml_down_value>0 and T_km_up_value>0 and P_m_har_value<=p_max and P_m_down_value<=p_max and P_km_up_value<=p_km_max and (T_km_com_value+T_km_up_value+T_ml_down_value)<=T_m and f_km_value>0 and V_lm_vfly_value>0 and E_kml_har_value>=(E_kml_up_value+E_kml_com_value):
                         return fitness_value, current_data
                     else:
                         return  float('inf'),{} # Return empty dict instead of float('inf') for data
@@ -460,3 +485,4 @@ plt.ylabel('Sum of Best Fitness Values')
 plt.grid(True)
 plt.xticks(generation_indices)
 plt.show()
+

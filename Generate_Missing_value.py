@@ -137,28 +137,28 @@ import cmath
 
 
 
-T_m_har=[]
-for i in range(5):
-    x=random.uniform(0,0.1)
-    T_m_har.append(x)
+# T_m_har=[]
+# for i in range(5):
+#     x=random.uniform(0,0.1)
+#     T_m_har.append(x)
 
-P_m_har=[]
-for i in range(5):
-    x=random.uniform(0,10)
-    P_m_har.append(x)
+# P_m_har=[]
+# for i in range(5):
+#     x=random.uniform(0,10)
+#     P_m_har.append(x)
 
-P_m_down=[]
-for i in range(5):
-    x=random.uniform(0,10)
-    P_m_down.append(x)
+# P_m_down=[]
+# for i in range(5):
+#     x=random.uniform(0,10)
+#     P_m_down.append(x)
 
 
 
-# creating of dataframe of above list
-df2=pd.DataFrame({'P_m_har':P_m_har,'T_m_har':T_m_har,'P_m_down':P_m_down,})
-df2.to_csv('BS_data.csv',index=True)
+# # creating of dataframe of above list
+# df2=pd.DataFrame({'P_m_har':P_m_har,'T_m_har':T_m_har,'P_m_down':P_m_down,})
+# df2.to_csv('BS_data.csv',index=True)
 
-# V_lm_vfly=[]
+# # V_lm_vfly=[]
 # for i in range(8):
 #     x=random.uniform(0,100)
 #     V_lm_vfly.append(x)
@@ -195,23 +195,23 @@ df2.to_csv('BS_data.csv',index=True)
 
 # calculating the h_kml_down
 # for example we take reflecting surface is 50
-# num_of_irs=50
-# num_of_people=50
-# Angle=np.random.uniform(0,180,(num_of_irs,num_of_people))
-# # print(Angle)
-# h_l_km=np.random.uniform(0,10,(num_of_irs,num_of_people))
-# h_l_m=np.random.uniform(0,10, (num_of_irs,num_of_people))
+num_of_irs=50
+num_of_people=50
+Angle=np.random.uniform(0,180,(num_of_irs,num_of_people))
+# print(Angle)
+h_l_km=np.random.uniform(0,10,(num_of_irs,num_of_people))
+h_l_m=np.random.uniform(0,10, (num_of_irs,num_of_people))
 
 
 
-# df5=pd.DataFrame(Angle)
-# df5.to_csv('Angle.csv',index=False)
+df5=pd.DataFrame(Angle)
+df5.to_csv('Angle2.csv',index=False)
 
-# df6=pd.DataFrame(h_l_km)
-# df6.to_csv('h_l_km.csv',index=False)
+df6=pd.DataFrame(h_l_km)
+df6.to_csv('h_l_km2.csv',index=False)
 
-# df5=pd.DataFrame(h_l_m)
-# df5.to_csv('h_l_m.csv',index=False)
+df5=pd.DataFrame(h_l_m)
+df5.to_csv('h_l_m2.csv',index=False)
 
 # def calculate_exp_i_theta(theta):
 #   return cmath.exp(1j * theta) 
@@ -236,8 +236,9 @@ df2.to_csv('BS_data.csv',index=True)
 
 # print(final)
 
-f_km_up=np.random.uniform(0.1,1,50)
+# f_km_up=np.random.uniform(0.1,1,50)
 
-df5=pd.DataFrame(f_km_up)
-df5.to_csv('f_km.csv',index=False)
-
+# df5=pd.DataFrame(f_km_up)
+# df5.to_csv('f_km.csv',index=False)
+# g_l_m_df=pd.read_csv(r'h_l_m.csv') # number of IRS is 50
+# print(g_l_m_df.shape)

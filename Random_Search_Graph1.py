@@ -24,6 +24,12 @@ Angle_UP_df=pd.read_csv(r'Angle.csv') # Renamed to avoid overwriting and using A
 g_l_km_df=pd.read_csv(r'h_l_km.csv') # Renamed to avoid overwriting and using g_l_km_df
 g_l_m_df=pd.read_csv(r'h_l_m.csv') # Renamed to avoid overwriting and using g_l_m_df
 
+Angle_har_df=pd.read_csv(r'Angle2.csv') # number of IRS is 50 store in each column
+f_l_km_df=pd.read_csv(r'h_l_km2.csv') # number of IRS is 50 store in each column
+f_l_m_df=pd.read_csv(r'h_l_m2.csv') # number of IRS is 50 store in each column
+f_km1=pd.read_csv(r'f_km.csv')
+
+
 
 # Constants
 Wl = 35.28
@@ -33,18 +39,24 @@ T_m_har = base['T_m_har']
 P_m_down = base['P_m_down']
 # T_ml_down = base['T_ml_down']
 # T_km_com = people['T_km_com']
-f_km=np.random.uniform(0,10, 50) #Frequency of local computing
+f_km=f_km1['0']
 # T_km_up = people['T_km_up']
 V_lm_vfly = uav['V_lm_vfly']
 V_lm_hfly = uav['V_lm_hfly']
 D_l_hfly = 100
+
+eta=10
+kappa=0.5
+p_max=10
+p_km_max=10
+T_m=10
 # Angle=IRS['Angle'] # Not needed as we load from CSV now
 # h_l_km=IRS['h_l_km'] # Not needed as we load from CSV now
 # h_l_m=IRS['h_l_m'] # Not needed as we load from CSV now
 P_km_up=IRS_UP['P_km_up']
-Angle1_col=IRS_UP['Angle'] # Renamed to avoid confusion with Angle dataframe
-g_l_km_col=IRS_UP['h_l_km'] # Renamed
-g_l_m_col=IRS_UP['h_l_m'] # Renamed
+# Angle1_col=IRS_UP['Angle'] # Renamed to avoid confusion with Angle dataframe
+# g_l_km_col=IRS_UP['h_l_km'] # Renamed
+# g_l_m_col=IRS_UP['h_l_m'] # Renamed
 
 
 # Additional constants for calculations
@@ -134,6 +146,14 @@ def R_kml_up(B,P_km_up,h_kml_up,Sub,sigma_m): #eqation number 4
 def sub(P_i_up,h_il_up):
     return P_i_up*h_il_up
 
+def E_km_com(f_km,T_km_com):
+    return eta*(10**(-28))*(f_km**3)*T_km_com
+
+def E_kml_up(P_km_up,T_km_up):
+    return P_km_up*T_km_up
+
+def E_kml_har(P_m_har,T_m_har,h_km_har):
+    return kappa*P_m_har*T_m_har*h_km_har
 
 #_______________________________________________________________________________________________
 # Random Search Parameters
@@ -185,6 +205,9 @@ for l in range(num_bs):
                 Angle1_row = Angle_UP_df.iloc[i, :] # Get row as Series
                 g_l_m_row = g_l_m_df.iloc[i, :] # Get row as Series
                 g_l_km_row = g_l_km_df.iloc[i, :] # Get row as Series
+                Angle1_row_compute = Angle_har_df.iloc[i, :]  # Use same angle row as parent - or you can introduce angle variation here if needed in GA
+                f_l_m_row_compute = f_l_m_df.iloc[i, :]
+                f_l_km_row_compute = f_l_km_df.iloc[i, :]
 
 
                 # Calculate Bh and p_l_b
@@ -216,9 +239,14 @@ for l in range(num_bs):
                 P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
                 P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
                 E_ml_UAV_value = E_ml_UAV(P_l_vfly_value, T_l_vfly_value, P_lm_hfly_value, T_l_hfly_value, P_l_hov_value, T_lm_hov_value)
+                h_kml_har_value_compute=h_kml_down(Angle1_row_compute,f_l_m_row_compute,f_l_km_row_compute) # Using original Angle_row, h_l_m_row, h_l_km_row for child as well - might need to be based on child data if angles are also part of optimization
+                E_kml_har_value=E_kml_har(P_m_har_value,T_m_har_value,h_kml_har_value_compute)
+                E_kml_com_value = E_km_com(f_km_value, T_km_com_value)
+                E_kml_up_value=E_kml_up(P_km_up_value,T_km_up_value)
+
 
                 # Validity checks - Moved from compute_fitness function
-                if not (V_lm_hfly_value>0 and T_m_har_value>0 and T_ml_down_value>0 and T_km_up_value>0):
+                if not (V_lm_hfly_value>0 and T_m_har_value>0 and T_ml_down_value>0 and T_km_up_value>0 and P_m_har_value<=p_max and P_m_down_value<=p_max and P_km_up_value<=p_km_max and (T_km_com_value+T_km_up_value+T_ml_down_value)<=T_m and f_km_value>0 and V_lm_vfly_value>0 and E_kml_har_value>=(E_kml_up_value+E_kml_com_value) ):
                     result_fitness = float('inf') # Assign very high fitness for invalid solutions
                 else:
                     # Calculate fitness
