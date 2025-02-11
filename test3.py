@@ -1,5 +1,5 @@
 # coding: utf-8
-#update the previous algorithm
+#update the previous algorithm to implement Random Search
 import pandas as pd
 import numpy as np
 import random
@@ -113,7 +113,7 @@ def R_ml_down(B,P_m_down,h_ml_worst): #eqation number 7
 
 def h_ml_worst(h_kml_down,sigma_km): #eqation number 8
     return h_kml_down/(sigma_km) # it will return the sigal value which is minimum of all
-                                     # the value for each itaration
+                                    # the value for each itaration
 
 def calculate_exp_i_theta(theta): # part of equation 8
   return cmath.exp(1j * theta)
@@ -137,7 +137,7 @@ def h_kml_down(Angle,h_l_m,h_l_km): # part of equation 8
 
 
     a=np.dot(h_l_m_np,diagonal) # Use numpy arrays for dot product
-    b=np.dot(a,h_l_km_np)       # Use numpy arrays for dot product
+    b=np.dot(a,h_l_km_np)      # Use numpy arrays for dot product
     final=abs(b[0][0]) # Take absolute value and ensure it's a scalar
     return (final**2)
 
@@ -167,7 +167,7 @@ population_size = 50 # Population size for GA
 all_best_combinations = []
 all_best_individuals = []
 
-# Main Genetic Algorithm Loop
+# Main Random Search Algorithm Loop
 for l in range(num_bs):
     all_best_individuals_bs = []
     P_m_har_value = P_m_har.values[l]
@@ -178,7 +178,8 @@ for l in range(num_bs):
     for k in range(num_uav_irs):
         best_fitness = float('inf')
         best_individual = {}
-        population = []
+        generations_data = [] # Store fitness history for plotting
+        generation_best_fitnesses = [] # Store best fitness in each generation
         V_lm_vfly_value = V_lm_vfly.values[k]
         V_lm_hfly_value = V_lm_hfly.values[k]
         D_l_hfly_value = D_l_hfly
@@ -188,17 +189,25 @@ for l in range(num_bs):
             h_il_up_value=h_kml_down(Angle_UP_df.iloc[i, :],g_l_m_df.iloc[i, :],g_l_km_df.iloc[i, :]) # Pass Series
             Sub_value+=sub(P_km_up[i],h_il_up_value)
 
-        # Initialize population
-        for i in range(population_size):
-            f_km_value = f_km[i]
-            P_km_up_value = P_km_up.values[i]
 
-            Angle_row = Angle_df.iloc[i, :] # Get row as Series
-            h_l_m_row = h_l_m_df.iloc[i, :] # Get row as Series
-            h_l_km_row = h_l_km_df.iloc[i, :] # Get row as Series
-            Angle1_row = Angle_UP_df.iloc[i, :] # Get row as Series
-            g_l_m_row = g_l_m_df.iloc[i, :] # Get row as Series
-            g_l_km_row = g_l_km_df.iloc[i, :] # Get row as Series
+        for j in range(num_generation): # Random Search Generations
+            current_generation_best_fitness = float('inf') # Track best fitness in current generation
+
+            # Randomly select an individual index
+            random_index = random.randint(0, num_population - 1)
+
+            f_km_value = f_km[random_index]
+            P_km_up_value = P_km_up.values[random_index]
+
+            Angle_row = Angle_df.iloc[random_index, :] # Get row as Series
+            h_l_m_row = h_l_m_df.iloc[random_index, :] # Get row as Series
+            h_l_km_row = h_l_km_df.iloc[random_index, :] # Get row as Series
+            Angle1_row = Angle_UP_df.iloc[random_index, :] # Get row as Series
+            g_l_m_row = g_l_m_df.iloc[random_index, :] # Get row as Series
+            g_l_km_row = g_l_km_df.iloc[random_index, :] # Get row as Series
+            Angle_har_row = Angle_har_df.iloc[random_index, :] # Get row as Series
+            f_l_m_row = f_l_m_df.iloc[random_index, :] # Get row as Series
+            f_l_km_row = f_l_km_df.iloc[random_index, :] # Get row as Series
 
 
             # Calculate Bh and p_l_b
@@ -218,6 +227,8 @@ for l in range(num_bs):
             h_kml_down_value=h_kml_down(Angle_row,h_l_m_row,h_l_km_row) # Pass Series
             h_ml_worst_value=h_ml_worst(h_kml_down_value,sigma_km)
             R_ml_down_value=R_ml_down(B,P_m_down_value,h_ml_worst_value)
+            if R_ml_down_value <= 0: # check if R_ml_down_value is zero or negative
+                R_ml_down_value = 1e-9 # Assign a small positive value to avoid division by zero
             T_ml_down_value=Dm/R_ml_down_value
             E_ml_down_value = P_m_down_value * T_ml_down_value
             T_km_com_value = D_km / f_km_value
@@ -230,160 +241,71 @@ for l in range(num_bs):
             P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
             P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
             E_ml_UAV_value = E_ml_UAV(P_l_vfly_value, T_l_vfly_value, P_lm_hfly_value, T_l_hfly_value, P_l_hov_value, T_lm_hov_value)
+            h_kml_har_value=h_kml_down(Angle_har_row,f_l_m_row,f_l_km_row)
+            E_kml_har_value=E_kml_har(P_m_har_value,T_m_har_value,h_kml_har_value)
+            E_kml_com_value = E_km_com(f_km_value, T_km_com_value)
+            E_kml_up_value=E_kml_up(P_km_up_value,T_km_up_value)
+
 
             # Calculate fitness
             result_fitness = Fitness(E_ml_har_value, E_ml_down_value, E_ml_UAV_value)
 
-            # Store initial population data
-            population.append({
-                'fitness': result_fitness,
-                'data':  {
-                    'P_m_down_value': P_m_down_value,
-                    'P_m_har_value': P_m_har_value,
-                    'T_m_har_value': T_m_har_value,
-                    'T_ml_down_value': T_ml_down_value,
-                    'f_km_value': f_km_value,
-                    'T_km_up_value': T_km_up_value,
-                    'V_lm_vfly_value': V_lm_vfly_value,
-                    'V_lm_hfly_value': V_lm_hfly_value,
-                    'P_km_up_value':P_km_up_value,
-                    'h_kml_down_value':h_kml_down_value,
-                    'T_km_com_value':T_km_com_value
+
+            current_individual = {
+                    'fitness': result_fitness,
+                    'data':  {
+                         'P_m_down_value': P_m_down_value,
+                         'P_m_har_value': P_m_har_value,
+                         'T_m_har_value': T_m_har_value,
+                         'T_ml_down_value': T_ml_down_value,
+                         'f_km_value': f_km_value,
+                         'T_km_up_value': T_km_up_value,
+                         'V_lm_vfly_value': V_lm_vfly_value,
+                         'V_lm_hfly_value': V_lm_hfly_value,
+                         'P_km_up_value':P_km_up_value,
+                         'h_kml_down_value':h_kml_down_value,
+                         'T_km_com_value':T_km_com_value
+                         }
                     }
-            })
 
-        generations_data = []
-        for j in range(num_generation):
-            child_population = []
-            for i in range(25): # Loop through population with step of 2
-                ranodmpopulation=[]
-                for i in range(10):
-                    ranodmpopulation.append(random.choice(population))
+            if V_lm_hfly_value<0 or T_m_har_value<0 or T_ml_down_value<0 or T_km_up_value<0 or P_m_har_value>p_max or P_m_down_value>p_max or P_km_up_value>p_km_max or (T_km_com_value+T_km_up_value+T_ml_down_value)>T_m or f_km_value<0 or V_lm_vfly_value<0 or E_kml_har_value<(E_kml_up_value+E_kml_com_value):
+                current_fitness = float('inf')
+            else:
+                current_fitness = result_fitness
 
-                ranodmpopulation = sorted(ranodmpopulation, key=lambda x: x['fitness'])
-                # Crossover
-                parent1 = ranodmpopulation[0]
-                parent2 = ranodmpopulation[1]
-                child_data = {}
-                for key in parent1['data']:
-                    child_data[key] = parent1['data'][key] * 0.6 + parent2['data'][key] * (1 - 0.6)
 
-                # Mutation
-                u = np.random.uniform(0, 1, 1)[0]
-                P_mutation = 0.5
-                variance=1
-                if u < P_mutation:
-                    for key in child_data:
-                        child_data[key] += random.normal(loc=0, scale=variance, size=(1))[0]
+            if current_fitness < best_fitness:
+                best_fitness = current_fitness
+                best_individual = current_individual
+            current_generation_best_fitness = min(current_generation_best_fitness, current_fitness) # track best fitness of generation
+            generation_best_fitnesses.append(current_generation_best_fitness) # Store best fitness for generation
 
-                # Compute child fitness
-                def compute_fitness(data):
-                    P_m_down_value = data['P_m_down_value']
-                    P_m_har_value = data['P_m_har_value']
-                    T_m_har_value = data['T_m_har_value']
-                    T_ml_down_value = data['T_ml_down_value']
-                    f_km_value = data['f_km_value']
-                    T_km_up_value = data['T_km_up_value']
-                    V_lm_vfly_value = data['V_lm_vfly_value']
-                    V_lm_hfly_value = data['V_lm_hfly_value']
-                    P_km_up_value=data['P_km_up_value']
-                    h_kml_down_value=data['h_kml_down_value']
-                    T_km_com_value=data['T_km_com_value']
+            generations_data.append(current_fitness) # Store all fitness values (optional, for more detailed individual plots if needed)
 
-                    # Calculate Bh and p_l_b for child
-                    Bh = (1 - 2.2558 * pow(10, 4) * H_value)
-                    Bh = max(1, Bh)
-                    p_l_b = (delta / 8) * Bh * Ar * s * pow(V_tip, 3)
 
-                    # Calculate power values
-                    P_lm_blade_value = P_lm_blade(Nr, p_l_b, V_tip, V_lm_hfly_value)
-                    P_lm_fuselage_value = P_lm_fuselage(Cd, Af, Bh, V_lm_hfly_value)
-                    P_lm_induced_value = P_lm_induced(Nr, Bh, Ar, Wl_value, V_lm_hfly_value)
-
-                    # Calculate time and energy values
-                    T_l_vfly_value = H_value / V_lm_vfly_value
-                    T_l_hfly_value = D_l_hfly_value / V_lm_hfly_value # Corrected: D_l_hfly / V_lm_hfly
-                    E_ml_har_value = P_m_har_value * T_m_har_value
-                    Angle_row_compute = Angle_df.iloc[i, :]  # Use same angle row as parent - or you can introduce angle variation here if needed in GA
-                    h_l_m_row_compute = h_l_m_df.iloc[i, :]
-                    h_l_km_row_compute = h_l_km_df.iloc[i, :]
-
-                    Angle1_row_compute = Angle_har_df.iloc[i, :]  # Use same angle row as parent - or you can introduce angle variation here if needed in GA
-                    f_l_m_row_compute = f_l_m_df.iloc[i, :]
-                    f_l_km_row_compute = f_l_km_df.iloc[i, :]
-
-                    h_kml_down_value_compute=h_kml_down(Angle_row_compute,h_l_m_row_compute,h_l_km_row_compute) # Using original Angle_row, h_l_m_row, h_l_km_row for child as well - might need to be based on child data if angles are also part of optimization
-                    h_ml_worst_value=h_ml_worst(h_kml_down_value_compute,sigma_km)
-                    R_ml_down_value=R_ml_down(B,P_m_down_value,h_ml_worst_value)
-                    if R_ml_down_value <= 0: # check if R_ml_down_value is zero or negative
-                        R_ml_down_value = 1e-9 # Assign a small positive value to avoid division by zero
-                    T_ml_down_value=Dm/R_ml_down_value
-                    E_ml_down_value = P_m_down_value * T_ml_down_value
-                    T_km_com_value = D_km / f_km_value
-                    T_lm_hov_value = T_lm_hov(T_km_com_value, T_km_up_value, T_ml_down_value)
-                    P_l_hov_value = P_l_hov(Wl_value, p_l_b, Nr, Ar, Bh)
-                    P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
-                    P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
-                    E_ml_UAV_value = E_ml_UAV(P_l_vfly_value, T_l_vfly_value, P_lm_hfly_value, T_l_hfly_value, P_l_hov_value, T_lm_hov_value)
-                    h_kml_har_value_compute=h_kml_down(Angle1_row_compute,f_l_m_row_compute,f_l_km_row_compute) # Using original Angle_row, h_l_m_row, h_l_km_row for child as well - might need to be based on child data if angles are also part of optimization
-                    E_kml_har_value=E_kml_har(P_m_har_value,T_m_har_value,h_kml_har_value_compute)
-                    E_kml_com_value = E_km_com(f_km_value, T_km_com_value)
-                    E_kml_up_value=E_kml_up(P_km_up_value,T_km_up_value)
-
-                    # Calculate fitness
-                    fitness_value = Fitness(E_ml_har_value, E_ml_down_value, E_ml_UAV_value)
-                    current_data = {
-                            'P_m_down_value': P_m_down_value,
-                            'P_m_har_value': P_m_har_value,
-                            'T_m_har_value': T_m_har_value,
-                            'T_ml_down_value': T_ml_down_value,
-                            'f_km_value': f_km_value,
-                            'T_km_up_value': T_km_up_value,
-                            'V_lm_vfly_value': V_lm_vfly_value,
-                            'V_lm_hfly_value': V_lm_hfly_value,
-                            'P_km_up_value':P_km_up_value,
-                            'h_kml_down_value':h_kml_down_value_compute, # Use compute value here
-                            'T_km_com_value':T_km_com_value
-                            }
-                    
-                    if V_lm_hfly_value<0 or T_m_har_value<0 or T_ml_down_value<0 or T_km_up_value<0 or P_m_har_value>p_max or P_m_down_value>p_max or P_km_up_value>p_km_max or (T_km_com_value+T_km_up_value+T_ml_down_value)>T_m or f_km_value<0 or V_lm_vfly_value<0 or E_kml_har_value<(E_kml_up_value+E_kml_com_value):
-                        return float('inf'),{}
-                    else:  
-                        return fitness_value, current_data
-                    
-
-                child_fitness, child_data1 = compute_fitness(child_data)
-                child_population.append({'fitness': child_fitness, 'data': child_data1})
-
-            # Create new population
-            new_population = population + child_population
-            new_population = sorted(new_population, key=lambda x: x['fitness'])
-            population = new_population[:population_size]
-            generations_data.append(population[0].copy())
-            # print(population[0])
-
-        best_individual_pair = population[0].copy()
+        best_individual_pair = best_individual.copy()
         best_individual_pair['generation'] = j + 1 # Use last j from loop, corrected index
-        best_individual_pair['type'] = 'GA'
+        best_individual_pair['type'] = 'RS'
         best_individual_pair['bs_index'] = l
         best_individual_pair['uav_index'] = k
         all_best_individuals_bs.append(best_individual_pair)
 
+
         all_best_combinations.append({
             'bs_index': l,
             'uav_index': k,
-            'best_fitness': population[0]['fitness'],
+            'best_fitness': best_fitness,
             'best_individual': best_individual_pair,
-            'generation_fitness': [gen['fitness'] for gen in generations_data]
+            'generation_fitness': generations_data, # Keep for individual plot (optional)
+            'generation_best_fitnesses': generation_best_fitnesses # Store best fitnesses per generation (for sum plot)
         })
-     
+
 
     # Find best individual for current BS across all UAVs
     best_individual_for_bs = min(all_best_individuals_bs, key=lambda x: x['fitness'])
-    
 
 
-# Select the best unique Base station and UAV-IRS pair using Auction based method
+# Auction-based assignment
 combination_lookup = {}
 for combination in all_best_combinations:
     if combination['bs_index'] not in combination_lookup:
@@ -418,7 +340,7 @@ while unassigned_bs and unassigned_uavs:
         unassigned_uavs.remove(best_combination_overall['uav_index'])
 
 # Print and Plotting
-print("\n--- Best Unique UAV Assignments (Auction Based Method) ---")
+print("\n--- Best Unique UAV Assignments (Auction Based Method) with Random Search ---")
 best_pair_for_plot = None
 min_fitness_for_plot = float('inf')
 
@@ -455,13 +377,18 @@ if best_pair_for_plot:
     fitness_history_best_pair = best_pair_for_plot['generation_fitness']
     generations = range(1, num_generation + 1)
 
+    # Filter out infinite values for plotting individual fitness
+    fitness_history_best_pair_finite = [f for f in fitness_history_best_pair if f != float('inf')]
+    generations_finite = range(1, len(fitness_history_best_pair_finite) + 1)
+
+
     plt.figure(figsize=(10, 6))
-    plt.plot(generations, fitness_history_best_pair, marker='o', linestyle='-')
+    plt.plot(generations_finite, fitness_history_best_pair_finite, marker='o', linestyle='-') # Ensure lines are connected
     plt.xlabel('Generation')
     plt.ylabel('Fitness Value')
-    plt.title(f'Fitness Improvement Over Generations for Best BS-UAV Pair (BS {best_pair_for_plot['bs_index']}, UAV {best_pair_for_plot['uav_index']})')
+    plt.title(f'Fitness Improvement Over Generations for Best BS-UAV Pair (BS {best_pair_for_plot['bs_index']}, UAV {best_pair_for_plot['uav_index']}) - Random Search')
     plt.grid(True)
-    plt.xticks(generations)
+    plt.xticks(generations_finite) # Use filtered generations
     plt.tight_layout()
     plt.show()
 else:
@@ -479,17 +406,21 @@ sum_fitness_per_generation = [0] * num_generation
 for gen_idx in range(num_generation):
     generation_sum = 0
     for combination in all_best_combinations:
-        generation_sum += combination['generation_fitness'][gen_idx]
+        # Filter out infinite values before summing for sum plot
+        generation_fitnesses_finite = [f for f in combination['generation_best_fitnesses'] if f != float('inf')]
+        if generation_fitnesses_finite: # Check if list is not empty after filtering
+            generation_sum += generation_fitnesses_finite[gen_idx] # Sum the best finite fitness
     sum_fitness_per_generation[gen_idx] = generation_sum
 
 generation_indices = list(range(1, num_generation + 1))
 
+print("Sum Fitness per Generation:", sum_fitness_per_generation) # DEBUG: Print values before plotting
+
 plt.figure(figsize=(10, 6))
-plt.plot(generation_indices, sum_fitness_per_generation, marker='o', linestyle='-')
-plt.title('Sum of Best Fitness Values Across Generations')
+plt.plot(generation_indices, sum_fitness_per_generation, marker='o', linestyle='-') # Ensure lines are connected
+plt.title('Sum of Best Fitness Values Across Generations - Random Search')
 plt.xlabel('Generation Number')
 plt.ylabel('Sum of Best Fitness Values')
 plt.grid(True)
 plt.xticks(generation_indices)
 plt.show()
-

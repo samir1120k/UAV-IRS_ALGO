@@ -128,7 +128,7 @@ def R_kml_up(B,P_km_up,h_kml_up,Sub,sigma_m): #eqation number 4
 #_______________________________________________________________________________________________
 # Hill Climbing Algorithm Parameters
 num_bs = 5
-num_generation = 100  # Number of iterations for Hill Climbing
+num_generation = 10  # Number of iterations for Hill Climbing
 num_uav_irs = 8
 all_best_combinations = []
 all_best_individuals = []

@@ -162,7 +162,7 @@ def E_kml_har(P_m_har,T_m_har,h_km_har):
 # Genetic Algorithm Parameters
 num_bs = 5
 num_irs_ele=50
-num_generation = 30 # Number of generations
+num_generation = 10 # Number of generations
 num_uav_irs = 8
 population_size = 50 # Population size for GA
 
@@ -347,7 +347,7 @@ for p_max_value in range(1, 11): # Iterate p_max from 1 to 10
                                         'h_kml_down_value':h_kml_down_value_compute, # Use compute value here
                                         'T_km_com_value':T_km_com_value
                                         }
-                        if V_lm_hfly_value>0 and T_m_har_value>0 and T_ml_down_value>0 and T_km_up_value>0 and P_m_har_value<=p_max and P_m_down_value<=p_max and P_km_up_value<=p_km_max and (T_km_com_value+T_km_up_value+T_ml_down_value)<=T_m and f_km_value>0  and E_kml_har_value>=(E_kml_up_value+E_kml_com_value):
+                        if V_lm_hfly_value>0 and T_m_har_value>0 and T_ml_down_value>0 and T_km_up_value>0 and P_m_har_value<=p_max_value and P_m_down_value<=p_max_value and P_km_up_value<=p_km_max and (T_km_com_value+T_km_up_value+T_ml_down_value)<=T_m and f_km_value>0  and E_kml_har_value>=(E_kml_up_value+E_kml_com_value) and V_lm_vfly_value>0:
                             return fitness_value, current_data
                         else:
                             return  float('inf'),{} # Return empty dict instead of float('inf') for data
