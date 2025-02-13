@@ -161,7 +161,7 @@ def E_kml_har(P_m_har,T_m_har,h_km_har):
 # Genetic Algorithm Parameters
 num_bs = 5
 num_irs_ele=50
-num_generation = 30 # Number of generations
+num_generation = 10 # Number of generations
 num_uav_irs = 8
 population_size = 50 # Population size for GA
 all_best_combinations = []

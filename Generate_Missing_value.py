@@ -138,18 +138,18 @@ import cmath
 
 
 # T_m_har=[]
-# for i in range(5):
-#     x=random.uniform(0,0.1)
+# for i in range(10):
+#     x=random.uniform(0,1)
 #     T_m_har.append(x)
 
 # P_m_har=[]
-# for i in range(5):
-#     x=random.uniform(0,10)
+# for i in range(10):
+#     x=random.uniform(0,1)
 #     P_m_har.append(x)
 
 # P_m_down=[]
-# for i in range(5):
-#     x=random.uniform(0,10)
+# for i in range(10):
+#     x=random.uniform(0,1)
 #     P_m_down.append(x)
 
 
@@ -158,19 +158,19 @@ import cmath
 # df2=pd.DataFrame({'P_m_har':P_m_har,'T_m_har':T_m_har,'P_m_down':P_m_down,})
 # df2.to_csv('BS_data.csv',index=True)
 
-# # V_lm_vfly=[]
-# for i in range(8):
+# V_lm_vfly=[]
+# for i in range(20):
 #     x=random.uniform(0,100)
 #     V_lm_vfly.append(x)
 
 # V_lm_hfly=[]
-# for i in range(8):
+# for i in range(20):
 #     x=random.uniform(0,100)
 #     V_lm_hfly.append(x)
 
 # D_l_hfly=[]
 
-# for i in range(8):
+# for i in range(20):
 #     x=random.uniform(0,100)
 #     D_l_hfly.append(x)
 
@@ -180,7 +180,7 @@ import cmath
 
 
 # T_km_com=[]
-# for i in range(50):
+# for i in range(500):
 #     x=random.uniform(0,100)
 #     T_km_com.append(x)
 
@@ -195,23 +195,25 @@ import cmath
 
 # calculating the h_kml_down
 # for example we take reflecting surface is 50
-num_of_irs=50
-num_of_people=50
-Angle=np.random.uniform(0,180,(num_of_irs,num_of_people))
-# print(Angle)
-h_l_km=np.random.uniform(0,10,(num_of_irs,num_of_people))
-h_l_m=np.random.uniform(0,10, (num_of_irs,num_of_people))
+# num_of_irs=500
+# num_of_people=500
+# Angle=np.random.uniform(0,180,(num_of_irs,num_of_people))
+# # print(Angle)
+# h_l_km=np.random.uniform(0,10,(num_of_irs,num_of_people))
+# h_l_m=np.random.uniform(0,10, (num_of_irs,num_of_people))
+
+# print(random.choice(Angle))
 
 
+# df5=pd.DataFrame(Angle)
+# df5.to_csv('Angle.csv',index=False)
 
-df5=pd.DataFrame(Angle)
-df5.to_csv('Angle2.csv',index=False)
+# df6=pd.DataFrame(h_l_km)
+# df6.to_csv('h_l_km.csv',index=False)
 
-df6=pd.DataFrame(h_l_km)
-df6.to_csv('h_l_km2.csv',index=False)
+# df5=pd.DataFrame(h_l_m)
+# df5.to_csv('h_l_m.csv',index=False)
 
-df5=pd.DataFrame(h_l_m)
-df5.to_csv('h_l_m2.csv',index=False)
 
 # def calculate_exp_i_theta(theta):
 #   return cmath.exp(1j * theta) 
@@ -236,9 +238,28 @@ df5.to_csv('h_l_m2.csv',index=False)
 
 # print(final)
 
-# f_km_up=np.random.uniform(0.1,1,50)
+# f_km_up=np.random.uniform(0.1,1,500)
 
 # df5=pd.DataFrame(f_km_up)
 # df5.to_csv('f_km.csv',index=False)
 # g_l_m_df=pd.read_csv(r'h_l_m.csv') # number of IRS is 50
 # print(g_l_m_df.shape)
+# print(random.randint(10))
+# f_km1=pd.read_csv(r'f_km.csv')
+# f_km=f_km1['0']
+# l=2
+# f_km2=f_km[l*50:(l+1)*50]
+# print(f_km2)
+# plt.rcParams["font.size"] = "20"
+# # plt.rcParams['figure.figsize'] = [5, 6]
+# # plt.plot(x, y, color='red', linestyle='dashed', linewidth = 0.5, markerfacecolor='blue', markersize=12)
+# plt.plot(T_m_range, fitness_sums_D_m, label = "HC-A")
+# plt.plot(T_m_range, fitness_sums_p_max, label = "C2GA")
+# plt.xlabel('Data size',size=20)
+# plt.ylabel('Energy',size=22)
+# # giving a title to my graph
+# # plt.title('Reward')
+# plt.legend()
+# plt.savefig("Energy vs Data size.pdf", format="pdf", bbox_inches="tight", dpi=800)
+# # plt.legend()
+# plt.show()

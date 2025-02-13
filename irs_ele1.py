@@ -19,9 +19,9 @@ Angle_df=pd.read_csv(r'Angle.csv') # number of IRS is 50 store in each column
 h_l_km_df=pd.read_csv(r'h_l_km.csv') # number of IRS is 50 store in each column
 h_l_m_df=pd.read_csv(r'h_l_m.csv') # number of IRS is 50 store in each column
 
-Angle_UP_df=pd.read_csv(r'Angle.csv') # number of IRS is 50 store in each column
-g_l_km_df=pd.read_csv(r'h_l_km.csv') # number of IRS is 50 store in each column
-g_l_m_df=pd.read_csv(r'h_l_m.csv') # number of IRS is 50 store in each column
+Angle_UP_df=pd.read_csv(r'Angle1.csv') # number of IRS is 50 store in each column
+g_l_km_df=pd.read_csv(r'h_l_km1.csv') # number of IRS is 50 store in each column
+g_l_m_df=pd.read_csv(r'h_l_m1.csv') # number of IRS is 50 store in each column
 Angle_har_df=pd.read_csv(r'Angle2.csv') # number of IRS is 50 store in each column
 f_l_km_df=pd.read_csv(r'h_l_km2.csv') # number of IRS is 50 store in each column
 f_l_m_df=pd.read_csv(r'h_l_m2.csv') # number of IRS is 50 store in each column
