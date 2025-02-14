@@ -42,12 +42,12 @@ D_l_hfly = 100
 
 P_km_up=p_km_UP['0']
 p_max=10 # moved inside loop
-p_km_max=10
+p_km_max=2.5
 T_m=10
 
 
 # Additional constants for calculations
-delta = 2
+delta = 0.012
 Ar = 0.1256
 s = 0.05
 Nr = 4
@@ -173,7 +173,7 @@ population_size = 50 # Initial population size (used for initial solution in HC)
 numerical_keys_for_hc = [
     'P_m_down_value', 'P_m_har_value', 'T_m_har_value',
     'f_km_value', 'V_lm_vfly_value', 'V_lm_hfly_value',
-    'P_km_up_value','f_km_value','Angle1_row','Angle_row','Angle2_row',
+    'P_km_up_value','f_km_value',
 ]
 
 
@@ -240,7 +240,7 @@ for D_m_current in D_m_values: # Iterate over D_km values
 
 
             # Calculate Bh and p_l_b
-            Bh = (1 - 2.2558 * pow(10, 4) * H_value)
+            Bh = (1 - 2.2558 * pow(10, -5) * H_value)**4.2577
             Bh = max(1, Bh)
             p_l_b = (delta / 8) * Bh * Ar * s * pow(V_tip, 3)
 
@@ -297,7 +297,7 @@ for D_m_current in D_m_values: # Iterate over D_km values
                 # Generate neighbor solution by perturbing the current solution
                 neighbor_solution_data = current_solution['data'].copy()
                 for key in numerical_keys_for_hc:
-                    neighbor_solution_data[key] += random.normal(loc=0, scale=0.05, size=(1))[0] # Reduced scale for smaller perturbations in HC
+                    neighbor_solution_data[key] += random.normal(loc=0, scale=1, size=(1))[0] # Reduced scale for smaller perturbations in HC
 
 
                 # Compute neighbor fitness
@@ -493,17 +493,15 @@ population_size = 50 # Population size for GA
 numerical_keys_for_crossover = [
     'P_m_down_value', 'P_m_har_value', 'T_m_har_value',
     'f_km_value', 'V_lm_vfly_value', 'V_lm_hfly_value',
-    'P_km_up_value','f_km_value','Angle1_row','Angle_row',
-    'Angle2_row',
+    'P_km_up_value','f_km_value',
 ]
-
 
 fitness_sums_GA= [] # Store sum of fitness values for each p_max
 
 D_m_values = np.arange(0.1, 1.1, 0.1) # D_km values from 0.1 to 1
 
 for D_m_current in D_m_values: # Iterate over D_km values
-    print(f"calculaiton for Dm",D_m_current)
+    print(f"calculaiton for Dm of GA",D_m_current)
     all_best_combinations = []
     all_best_individuals = []
 
@@ -645,7 +643,7 @@ for D_m_current in D_m_values: # Iterate over D_km values
                     P_mutation = 0.5
                     if u < P_mutation:
                         for key in numerical_keys_for_crossover: # Apply mutation only to numerical keys
-                            child_data[key] += random.normal(loc=0, scale=0.1, size=(1))[0]
+                            child_data[key] += random.normal(loc=0, scale=1, size=(1))[0]
 
                     # Compute child fitness
                     def compute_fitness(data):

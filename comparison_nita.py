@@ -44,6 +44,7 @@ P_km_up=p_km_UP['0']
 p_max=10 # moved inside loop
 p_km_max=10
 T_m=10
+D_m_current=0.49
 
 
 # Additional constants for calculations
@@ -179,10 +180,10 @@ numerical_keys_for_hc = [
 
 fitness_sums_HC = [] # Store sum of fitness values for each p_max
 
-D_m_values = np.arange(0.1, 1.1, 0.1) # D_km values from 0.1 to 1
+nita_values = np.arange(0.1, 1.1, 0.1) # D_km values from 0.1 to 1
 
-for D_m_current in D_m_values: # Iterate over D_km values
-    print(f"calculaiton for Dm",D_m_current)
+for nita in nita_values: # Iterate over D_km values
+    print(f"calculaiton for Dm",nita)
     all_best_combinations = []
     all_best_individuals = []
 
@@ -297,7 +298,7 @@ for D_m_current in D_m_values: # Iterate over D_km values
                 # Generate neighbor solution by perturbing the current solution
                 neighbor_solution_data = current_solution['data'].copy()
                 for key in numerical_keys_for_hc:
-                    neighbor_solution_data[key] += random.normal(loc=0, scale=0.05, size=(1))[0] # Reduced scale for smaller perturbations in HC
+                    neighbor_solution_data[key] += random.normal(loc=0, scale=nita, size=(1))[0] # Reduced scale for smaller perturbations in HC
 
 
                 # Compute neighbor fitness
@@ -500,10 +501,10 @@ numerical_keys_for_crossover = [
 
 fitness_sums_GA= [] # Store sum of fitness values for each p_max
 
-D_m_values = np.arange(0.1, 1.1, 0.1) # D_km values from 0.1 to 1
+nita_values = np.arange(0.1, 1.1, 0.1) # D_km values from 0.1 to 1
 
-for D_m_current in D_m_values: # Iterate over D_km values
-    print(f"calculaiton for Dm",D_m_current)
+for nita in nita_values: # Iterate over D_km values
+    print(f"calculaiton for Dm",nita)
     all_best_combinations = []
     all_best_individuals = []
 
@@ -645,7 +646,7 @@ for D_m_current in D_m_values: # Iterate over D_km values
                     P_mutation = 0.5
                     if u < P_mutation:
                         for key in numerical_keys_for_crossover: # Apply mutation only to numerical keys
-                            child_data[key] += random.normal(loc=0, scale=0.1, size=(1))[0]
+                            child_data[key] += random.normal(loc=0, scale=nita, size=(1))[0]
 
                     # Compute child fitness
                     def compute_fitness(data):
@@ -828,15 +829,15 @@ for D_m_current in D_m_values: # Iterate over D_km values
             print("-" * 20)
 
 plt.figure(figsize=(12, 7))
-T_m_range = np.arange(0.1, 1.1, 0.1)
+nita_range = np.arange(0.1, 1.1, 0.1)
 
 plt.rcParams["font.size"] = "20"
-plt.plot(T_m_range, fitness_sums_HC, label = "HC-A")
-plt.plot(T_m_range, fitness_sums_GA, label = "C2GA")
-plt.xlabel('Data size',size=20)
+plt.plot(nita_range, fitness_sums_HC, label = "HC-A")
+plt.plot(nita_range, fitness_sums_GA, label = "C2GA")
+plt.xlabel('nita',size=20)
 plt.ylabel('Energy',size=22)
 plt.legend()
-plt.savefig("Energy vs Data size.pdf", format="pdf", bbox_inches="tight", dpi=800)
+plt.savefig("Energy vs nita.pdf", format="pdf", bbox_inches="tight", dpi=800)
 plt.show()
 
 percentage_improvements = []
@@ -845,10 +846,10 @@ average_percentage_improvement_HC_A = 0
 average_percentage_improvement_C2GA = 0
 
 print("\n--- Algorithm Comparison ---")
-for i in range(len(T_m_range)):
+for i in range(len(nita_range)):
     hc_a_fitness = fitness_sums_HC[i]
     c2ga_fitness = fitness_sums_GA[i]
-    data_size = T_m_range[i]
+    data_size = nita_range[i]
 
     if hc_a_fitness < c2ga_fitness:
         better_fitness = hc_a_fitness
@@ -867,13 +868,13 @@ for i in range(len(T_m_range)):
         better_algorithm_counts['Tie'] += 1
         percentage_improvement = 0 # No improvement if it's a tie
         percentage_improvements.append(percentage_improvement) # Append 0 for tie
-        print(f"Data size {data_size:.1f}: Tie in Energy ({hc_a_fitness:.2f} vs {c2ga_fitness:.2f}) - 0.00% Improvement")
+        print(f"nita {data_size:.1f}: Tie in Energy ({hc_a_fitness:.2f} vs {c2ga_fitness:.2f}) - 0.00% Improvement")
         continue # Skip percentage calculation for tie
 
     percentage_improvement = ((worse_fitness - better_fitness) / worse_fitness) * 100
     percentage_improvements.append(percentage_improvement)
 
-    print(f"Data size {data_size:.1f}: {better_algorithm} is better by {percentage_improvement:.2f}% (Energy: {better_fitness:.2f} vs {worse_fitness:.2f})")
+    print(f"nita {data_size:.1f}: {better_algorithm} is better by {percentage_improvement:.2f}% (Energy: {better_fitness:.2f} vs {worse_fitness:.2f})")
 
 
 # Calculate average percentage improvement for cases where HC-A is better
@@ -889,9 +890,9 @@ if c2ga_improvements:
 
 print("\n--- Summary ---")
 print("Algorithm Performance Comparison:")
-print(f"  HC-A was better in {better_algorithm_counts['HC-A']} out of {len(T_m_range)} cases.")
-print(f"  C2GA was better in {better_algorithm_counts['C2GA']} out of {len(T_m_range)} cases.")
-print(f"  Tie in {better_algorithm_counts['Tie']} out of {len(T_m_range)} cases.")
+print(f"  HC-A was better in {better_algorithm_counts['HC-A']} out of {len(nita_range)} cases.")
+print(f"  C2GA was better in {better_algorithm_counts['C2GA']} out of {len(nita_range)} cases.")
+print(f"  Tie in {better_algorithm_counts['Tie']} out of {len(nita_range)} cases.")
 
 if better_algorithm_counts['HC-A'] > better_algorithm_counts['C2GA']:
     if hc_a_improvements:

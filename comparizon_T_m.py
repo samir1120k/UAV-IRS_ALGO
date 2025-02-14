@@ -43,7 +43,8 @@ D_l_hfly = 100
 P_km_up=p_km_UP['0']
 p_max=10 # moved inside loop
 p_km_max=10
-T_m=10
+# T_m=
+D_m_current=0.49
 
 
 # Additional constants for calculations
@@ -178,11 +179,10 @@ numerical_keys_for_hc = [
 
 
 fitness_sums_HC = [] # Store sum of fitness values for each p_max
+T_m_values = np.arange(1, 11, 1) # D_km values from 0.1 to 1
 
-D_m_values = np.arange(0.1, 1.1, 0.1) # D_km values from 0.1 to 1
-
-for D_m_current in D_m_values: # Iterate over D_km values
-    print(f"calculaiton for Dm",D_m_current)
+for T_m in T_m_values: # Iterate over D_km values
+    print(f"calculaiton for Dm for HC",T_m)
     all_best_combinations = []
     all_best_individuals = []
 
@@ -297,7 +297,7 @@ for D_m_current in D_m_values: # Iterate over D_km values
                 # Generate neighbor solution by perturbing the current solution
                 neighbor_solution_data = current_solution['data'].copy()
                 for key in numerical_keys_for_hc:
-                    neighbor_solution_data[key] += random.normal(loc=0, scale=0.05, size=(1))[0] # Reduced scale for smaller perturbations in HC
+                    neighbor_solution_data[key] += random.normal(loc=0, scale=1, size=(1))[0] # Reduced scale for smaller perturbations in HC
 
 
                 # Compute neighbor fitness
@@ -500,10 +500,10 @@ numerical_keys_for_crossover = [
 
 fitness_sums_GA= [] # Store sum of fitness values for each p_max
 
-D_m_values = np.arange(0.1, 1.1, 0.1) # D_km values from 0.1 to 1
+T_m_values = np.arange(1, 11, 1) # D_km values from 0.1 to 1
 
-for D_m_current in D_m_values: # Iterate over D_km values
-    print(f"calculaiton for Dm",D_m_current)
+for T_m in T_m_values: # Iterate over D_km values
+    print(f"calculaiton for Dm of GA",T_m)
     all_best_combinations = []
     all_best_individuals = []
 
@@ -645,7 +645,7 @@ for D_m_current in D_m_values: # Iterate over D_km values
                     P_mutation = 0.5
                     if u < P_mutation:
                         for key in numerical_keys_for_crossover: # Apply mutation only to numerical keys
-                            child_data[key] += random.normal(loc=0, scale=0.1, size=(1))[0]
+                            child_data[key] += random.normal(loc=0, scale=1, size=(1))[0]
 
                     # Compute child fitness
                     def compute_fitness(data):
@@ -828,15 +828,15 @@ for D_m_current in D_m_values: # Iterate over D_km values
             print("-" * 20)
 
 plt.figure(figsize=(12, 7))
-T_m_range = np.arange(0.1, 1.1, 0.1)
+T_m_range = np.arange(1, 11, 1)
 
 plt.rcParams["font.size"] = "20"
 plt.plot(T_m_range, fitness_sums_HC, label = "HC-A")
 plt.plot(T_m_range, fitness_sums_GA, label = "C2GA")
-plt.xlabel('Data size',size=20)
+plt.xlabel('Time Delay',size=20)
 plt.ylabel('Energy',size=22)
 plt.legend()
-plt.savefig("Energy vs Data size.pdf", format="pdf", bbox_inches="tight", dpi=800)
+plt.savefig("Energy vs Time Delay.pdf", format="pdf", bbox_inches="tight", dpi=800)
 plt.show()
 
 percentage_improvements = []

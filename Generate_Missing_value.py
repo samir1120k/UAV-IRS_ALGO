@@ -263,3 +263,13 @@ import cmath
 # plt.savefig("Energy vs Data size.pdf", format="pdf", bbox_inches="tight", dpi=800)
 # # plt.legend()
 # plt.show()
+
+
+h_l_km=np.random.uniform(0,10,500)
+
+
+
+
+
+df5=pd.DataFrame(h_l_km)
+df5.to_csv('P_km_up.csv',index=False)

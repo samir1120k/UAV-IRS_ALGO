@@ -15,20 +15,6 @@ uav = pd.read_csv(r'UAV_data.csv')
 people = pd.read_csv(r'people_data.csv')
 IRS=pd.read_csv(r'IRS_data.csv')
 p_km_UP=pd.read_csv(r'P_km_up.csv')
-
-Angle_df=pd.read_csv(r'Angle.csv') # number of IRS is 500 store in each column
-h_l_km_df=pd.read_csv(r'h_l_km.csv') # number of IRS is 500 store in each column
-h_l_m_df=pd.read_csv(r'h_l_m.csv') # number of IRS is 500 store in each column
-
-Angle_UP_df=pd.read_csv(r'Angle1.csv') # number of IRS is 500 store in each column
-g_l_km_df=pd.read_csv(r'h_l_km1.csv') # number of IRS is 500 store in each column
-g_l_m_df=pd.read_csv(r'h_l_m1.csv') # number of IRS is 500 store in each column # corrected filename
-
-Angle_har_df=pd.read_csv(r'Angle2.csv') # number of IRS is 500 store in each column
-f_l_km_df=pd.read_csv(r'h_l_km2.csv') # number of IRS is 500 store in each column
-f_l_m_df=pd.read_csv(r'h_l_m2.csv') # number of IRS is 500 store in each column # corrected filename
-
-
 f_km1=pd.read_csv(r'f_km.csv')
 
 # Constants
@@ -37,22 +23,14 @@ H = 20
 P_m_har = base['P_m_har']
 T_m_har = base['T_m_har']
 P_m_down = base['P_m_down']
-# T_ml_down = base['T_ml_down']
-# T_km_com = people['T_km_com']
 f_km=f_km1['0']
-# T_km_up = people['T_km_up']
 V_lm_vfly = uav['V_lm_vfly']
 V_lm_hfly = uav['V_lm_hfly']
 D_l_hfly = 100
-
 P_km_up=p_km_UP['0']
-# Angle1_col=IRS_UP['Angle'] # number of irs element is 50
-# g_l_km_col=IRS_UP['h_l_km'] # number of irs elemnt is 50
-# g_l_m_col=IRS_UP['h_l_m'] # number of irs element is 50
-p_max=10 # moved inside loop
+p_max=10
 p_km_max=10
 T_m=10
-
 
 # Additional constants for calculations
 delta = 2
@@ -63,17 +41,11 @@ V_tip = 102
 Cd = 0.022
 Af = 0.2113
 D_km = 0.5
-# Dm=0.49
 B=10 #MHz
 sigma_km=10**(-13)
 eta=10
 kappa=0.5
-num_population=50
-
-# Determine the maximum possible rows based on the smallest dataframe size
-min_rows = min(len(Angle_df), len(h_l_km_df), len(h_l_m_df), len(Angle_UP_df), len(g_l_km_df), len(g_l_m_df), len(Angle_har_df), len(f_l_km_df), len(f_l_m_df), len(f_km1))
-num_rows_data_files = min_rows # Dynamically set num_rows_data_files based on the smallest dataframe length
-population_size = min(50, num_rows_data_files) # Ensure population_size is not larger than available data
+Dm=0.49 # keeping Dm global as used in the code
 
 # Fitness function to calculate total energy consumption
 def Fitness(E_ml_har, E_ml_down, E_ml_UAV):
@@ -112,51 +84,55 @@ def T_lm_hov(T_km_com, T_kml_up, T_ml_down):
     return T_km_com + T_kml_up + T_ml_down
 
 def R_ml_down(B,P_m_down,h_ml_worst): #eqation number 7
-    temp1=np.min(h_ml_worst*P_m_down) # Consider if min is the correct aggregation. It should be multiplication
+    temp1= h_ml_worst*P_m_down # Corrected: removed np.min
     if (1+temp1) <= 0:
         return 0  # Return 0 if log argument is non-positive to avoid error
     return B*math.log2(1+temp1)
 
 def h_ml_worst(h_kml_down,sigma_km): #eqation number 8
     return h_kml_down/(sigma_km) # it will return the sigal value which is minimum of all
-            # the value for each itaration
+        # the value for each itaration
 
 def calculate_exp_i_theta(theta): # part of equation 8
-  return cmath.exp(1j * theta)
+    return cmath.exp(1j * theta)
  # 1j represents the imaginary unit in Python
 
-def h_kml_down(Angle,h_l_m,h_l_km): # part of equation 8
+def h_kml_down(Angle,h_l_m,h_l_km, num_irs_ele): # Modified: Added num_irs_ele argument
     result=[]
-    if isinstance(Angle, float): # Check if Angle is float, if so, return 0 or handle appropriately
-        return 0 # Or raise an exception or return a default value as needed
+    if isinstance(Angle, float):
+        return 0
 
-    if not isinstance(Angle, pd.Series): # added check to handle non-series input
+    if not isinstance(Angle, pd.Series):
         raise TypeError(f"Expected Angle to be pd.Series, got {type(Angle)}")
 
-    for i in range(len(Angle)):
-        theta_radians = math.radians(Angle.iloc[i]) # Use iloc for position-based indexing
+    # Slice Series to num_irs_ele inside the function
+    Angle_sliced = Angle.iloc[:num_irs_ele]
+    h_l_m_sliced = h_l_m.iloc[:num_irs_ele]
+    h_l_km_sliced = h_l_km.iloc[:num_irs_ele]
+
+    for i in range(len(Angle_sliced)): # Iterate over the sliced Angle
+        theta_radians = math.radians(Angle_sliced.iloc[i])
         results= calculate_exp_i_theta(theta_radians)
         result.append(results)
 
     diagonal=np.diag(result)
-    # Ensure h_l_m and h_l_km are correctly formatted as numpy arrays
-    h_l_m_np = h_l_m.to_numpy() # Convert Series to numpy array
-    h_l_km_np = h_l_km.to_numpy() # Convert Series to numpy array
+    h_l_m_np = h_l_m_sliced.to_numpy() # Convert sliced Series to numpy array
+    h_l_km_np = h_l_km_sliced.to_numpy() # Convert sliced Series to numpy array
     if h_l_m_np.ndim == 1:
-        h_l_m_np = h_l_m_np.reshape(1, -1) # Reshape to 2D if necessary
+        h_l_m_np = h_l_m_np.reshape(1, -1)
     if h_l_km_np.ndim == 1:
-        h_l_km_np = h_l_km_np.reshape(-1, 1) # Reshape to 2D if necessary
+        h_l_km_np = h_l_km_np.reshape(-1, 1)
 
 
-    a=np.dot(h_l_m_np,diagonal) # Use numpy arrays for dot product
-    b=np.dot(a,h_l_km_np)     # Use numpy arrays for dot product
-    final=abs(b[0][0]) # Take absolute value and ensure it's a scalar
+    a=np.dot(h_l_m_np,diagonal)
+    b=np.dot(a,h_l_km_np)
+    final=abs(b[0][0])
     return (final**2)
 
 def R_kml_up(B,P_km_up,h_kml_up,Sub,sigma_m): #eqation number 4
     temp1=(P_km_up*h_kml_up)/ (Sub+(sigma_m))
     return B*math.log2(1+temp1)
-#this is inside the equation 4 have to take summation of h_i_up and P_i_up
+
 def sub(P_i_up,h_il_up):
     return P_i_up*h_il_up
 
@@ -166,35 +142,44 @@ def E_km_com(f_km,T_km_com):
 def E_kml_up(P_km_up,T_km_up):
     return P_km_up*T_km_up
 
-def E_kml_har(P_m_har,T_m_har,h_km_har):
-    return kappa*P_m_har*T_m_har*h_km_har
+def E_kml_har(P_m_har, T_m_har): 
+    return kappa*P_m_har*T_m_har
 
-#_______________________________________________________________________________________________
-# Genetic Algorithm Parameters
+num_population=50
 num_bs = 5
-num_irs_ele=50
-num_generation = 1 # Number of generations, increased for GA to evolve
+num_generation = 1
 num_uav_irs = 8
-population_size = 50 # Population size for GA
+population_size = 50
 
-# Define keys that should be subjected to crossover and mutation (numerical parameters)
 numerical_keys_for_crossover = [
     'P_m_down_value', 'P_m_har_value', 'T_m_har_value',
     'f_km_value', 'V_lm_vfly_value', 'V_lm_hfly_value',
     'P_km_up_value','f_km_value',
 ]
 
+fitness_sums_irs_ele = [] # Store sum of fitness values for each num_irs_ele
+irs_element_values = range(10, 51, 5) # num_irs_ele values from 10 to 50 in steps of 5
 
-fitness_sums_p_max = [] # Store sum of fitness values for each p_max
 
-D_m_values = np.arange(0.1, 1.1, 0.1) # D_km values from 0.1 to 1
+for num_irs_ele in irs_element_values: # Loop through different num_irs_ele values
+    print(f"Calculation for num_irs_ele: {num_irs_ele}")
 
-for D_m_current in D_m_values: # Iterate over D_km values
-    print(f"calculaiton for Dm",D_m_current)
+    Angle_df=pd.read_csv(r'Angle.csv') # number of IRS is 500 store in each column
+    h_l_km_df=pd.read_csv(r'h_l_km.csv') # number of IRS is 500 store in each column
+    h_l_m_df=pd.read_csv(r'h_l_m.csv') # number of IRS is 500 store in each column
+
+    Angle_UP_df=pd.read_csv(r'Angle1.csv') # number of IRS is 500 store in each column
+    g_l_km_df=pd.read_csv(r'h_l_km1.csv') # number of IRS is 500 store in each column
+    g_l_m_df=pd.read_csv(r'h_l_m1.csv') # number of IRS is 500 store in each column # corrected filename
+
+    Angle_har_df=pd.read_csv(r'Angle2.csv') # number of IRS is 500 store in each column
+    f_l_km_df=pd.read_csv(r'h_l_km2.csv') # number of IRS is 500 store in each column
+    f_l_m_df=pd.read_csv(r'h_l_m2.csv') # number of IRS is 500 store in each column # corrected filename
+
+
     all_best_combinations = []
     all_best_individuals = []
 
-    # Main Genetic Algorithm Loop
     for l in range(num_bs):
         all_best_individuals_bs = []
         P_m_har_value = P_m_har.values[l]
@@ -202,18 +187,14 @@ for D_m_current in D_m_values: # Iterate over D_km values
         P_m_down_value = P_m_down.values[l]
         H_value = H
 
-        # Select unique row indices for the current BS
-
-        index_list = list(range(num_rows_data_files)) # Create a list of all indices
+        index_list = list(range(500))
         random.shuffle(index_list)
         unique_row_indices = index_list[:population_size]
-        # Create dataframes with uniquely selected rows for the current BS
 
-        h_l_km_df_bs = h_l_km_df.iloc[unique_row_indices, :].reset_index(drop=True)
-        g_l_km_df_bs = g_l_km_df.iloc[unique_row_indices, :].reset_index(drop=True)
-        f_l_km_df_bs = f_l_km_df.iloc[unique_row_indices, :].reset_index(drop=True)
+        h_l_km_df_bs = h_l_km_df.iloc[unique_row_indices, :num_irs_ele].reset_index(drop=True) # Sliced columns
+        g_l_km_df_bs = g_l_km_df.iloc[unique_row_indices, :num_irs_ele].reset_index(drop=True) # Sliced columns
+        f_l_km_df_bs = f_l_km_df.iloc[unique_row_indices, :num_irs_ele].reset_index(drop=True) # Sliced columns
         f_km_bs = f_km[unique_row_indices].reset_index(drop=True)
-        # Corrected line: Ensure indices are within bounds of P_km_up
         valid_indices = [i for i in unique_row_indices if i < len(P_km_up)]
         P_km_up_bs = P_km_up.iloc[valid_indices].reset_index(drop=True)
 
@@ -227,62 +208,61 @@ for D_m_current in D_m_values: # Iterate over D_km values
             D_l_hfly_value = D_l_hfly
             Wl_value = Wl
             Sub_value=0
-            # Corrected loop range to use valid_indices length
-            for i in range(len(valid_indices)): # Using length of valid_indices
-                h_il_up_value=h_kml_down(Angle_UP_df.iloc[i, :],g_l_m_df.iloc[k, :],g_l_km_df_bs.iloc[i, :]) # Pass Series, corrected index to i
+
+            for i in range(len(valid_indices)):
+                # Slice the Angle_UP_df, g_l_m_df, g_l_km_df_bs to num_irs_ele columns
+                Angle_UP_df_sliced = Angle_UP_df.iloc[i, :num_irs_ele]
+                g_l_m_df_sliced = g_l_m_df.iloc[k, :num_irs_ele]
+                g_l_km_df_bs_sliced = g_l_km_df_bs.iloc[i, :num_irs_ele]
+
+                h_il_up_value=h_kml_down(Angle_UP_df_sliced, g_l_m_df_sliced, g_l_km_df_bs_sliced, num_irs_ele) # Pass num_irs_ele
                 Sub_value+=sub(P_km_up_bs[i],h_il_up_value)
 
-            # Initialize population
-            # Corrected loop range to use valid_indices length
-            for i in range(len(valid_indices)): # Using length of valid_indices
-                f_km_value = f_km_bs[i] # Use BS-specific f_km
-                P_km_up_value = P_km_up_bs[i] # Use BS-specific P_km_up
 
-                Angle_row = Angle_df.iloc[i, :] # Use BS-specific Angle_df
-                h_l_m_row = h_l_m_df.iloc[k, :] # Use BS-specific h_l_m_df
-                h_l_km_row = h_l_km_df_bs.iloc[i, :] # Use BS-specific h_l_km_df
-                Angle1_row = Angle_UP_df.iloc[i, :] # Use BS-specific Angle_UP_df
-                g_l_m_row = g_l_m_df.iloc[k, :] # Use BS-specific g_l_m_df
-                g_l_km_row = g_l_km_df_bs.iloc[i, :] # Use BS-specific g_l_km_df
-                Angle2_row = Angle_har_df.iloc[i, :] # Use BS-specific Angle_har_df
-                f_l_m_row = f_l_m_df.iloc[k, :] # Use BS-specific f_l_m_df
-                f_l_km_row = f_l_km_df_bs.iloc[i, :] # Use BS-specific f_l_km_df
+            for i in range(len(valid_indices)):
+                f_km_value = f_km_bs[i]
+                P_km_up_value = P_km_up_bs[i]
 
+                # Slice the Angle_df, h_l_m_df, h_l_km_df_bs, Angle_har_df, f_l_m_df, f_l_km_df_bs to num_irs_ele columns
+                Angle_row = Angle_df.iloc[i, :num_irs_ele]
+                h_l_m_row = h_l_m_df.iloc[k, :num_irs_ele]
+                h_l_km_row = h_l_km_df_bs.iloc[i, :num_irs_ele]
+                Angle1_row = Angle_UP_df.iloc[i, :num_irs_ele] # using sliced version not needed again
+                g_l_m_row = g_l_m_df.iloc[k, :num_irs_ele]  # using sliced version not needed again
+                g_l_km_row = g_l_km_df_bs.iloc[i, :num_irs_ele] # using sliced version not needed again
+                Angle2_row = Angle_har_df.iloc[i, :num_irs_ele]
+                f_l_m_row = f_l_m_df.iloc[k, :num_irs_ele]
+                f_l_km_row = f_l_km_df_bs.iloc[i, :num_irs_ele]
 
-                # Calculate Bh and p_l_b
                 Bh = (1 - 2.2558 * pow(10, 4) * H_value)
                 Bh = max(1, Bh)
                 p_l_b = (delta / 8) * Bh * Ar * s * pow(V_tip, 3)
 
-                # Calculate power values
                 P_lm_blade_value = P_lm_blade(Nr, p_l_b, V_tip, V_lm_hfly_value)
                 P_lm_fuselage_value = P_lm_fuselage(Cd, Af, Bh, V_lm_hfly_value)
                 P_lm_induced_value = P_lm_induced(Nr, Bh, Ar, Wl_value, V_lm_vfly_value)
 
-                # Calculate time and energy values
                 T_l_vfly_value = H_value / V_lm_vfly_value
-                T_l_hfly_value = D_l_hfly_value / V_lm_hfly_value # Corrected: D_l_hfly / V_lm_hfly
+                T_l_hfly_value = D_l_hfly_value / V_lm_hfly_value
                 E_ml_har_value = P_m_har_value * T_m_har_value
-                h_kml_down_value=h_kml_down(Angle_row,h_l_m_row,h_l_km_row) # Pass Series
+                h_kml_down_value=h_kml_down(Angle_row,h_l_m_row,h_l_km_row, num_irs_ele) # Pass num_irs_ele
                 h_ml_worst_value=h_ml_worst(h_kml_down_value,sigma_km)
                 R_ml_down_value=R_ml_down(B,P_m_down_value,h_ml_worst_value)
-                T_ml_down_value=D_m_current/R_ml_down_value
+                T_ml_down_value=Dm/R_ml_down_value # using global Dm
                 E_ml_down_value = P_m_down_value * T_ml_down_value
                 T_km_com_value = D_km / f_km_value
-                h_kml_up_value=h_kml_down(Angle1_row,g_l_m_row,g_l_km_row) # Pass Series, using same function, might need different one if logic is different
+                h_kml_up_value=h_kml_down(Angle1_row,g_l_m_row,g_l_km_row, num_irs_ele) # Pass num_irs_ele
 
                 R_kml_up_value=R_kml_up(B,P_km_up_value,h_kml_up_value,Sub_value,sigma_km)
-                T_km_up_value=D_m_current/R_kml_up_value # equation number 5
+                T_km_up_value=Dm/R_kml_up_value # using global Dm
                 T_lm_hov_value = T_lm_hov(T_km_com_value, T_km_up_value, T_ml_down_value)
                 P_l_hov_value = P_l_hov(Wl_value, p_l_b, Nr, Ar, Bh)
                 P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
                 P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
                 E_ml_UAV_value = E_ml_UAV(P_l_vfly_value, T_l_vfly_value, P_lm_hfly_value, T_l_hfly_value, P_l_hov_value, T_lm_hov_value)
 
-                # Calculate fitness
                 result_fitness = Fitness(E_ml_har_value, E_ml_down_value, E_ml_UAV_value)
 
-                # Store initial population data
                 population.append({
                     'fitness': result_fitness,
                     'data':  {
@@ -303,86 +283,69 @@ for D_m_current in D_m_values: # Iterate over D_km values
             generations_data = []
             for j in range(num_generation):
                 child_population = []
-                # Corrected loop range to use valid_indices length
+                                    # Corrected loop range to use valid_indices length
                 for i in range(0, len(valid_indices), 2): # Loop through population with step of 2
                     if i + 1 >= len(valid_indices): # Check if i+1 is within bounds, if not break to avoid error in accessing population[i+1]
                         break
-                    # Crossover
-                    parent1 = population[i]
-                    parent2 = population[i+1]
+                    ranodmpopulation=[]
+                    for i in range(10):
+                        ranodmpopulation.append(random.choice(population))
+                    ranodmpopulation = sorted(ranodmpopulation, key=lambda x: x['fitness'])
+                    parent1 = ranodmpopulation[0]
+                    parent2 = ranodmpopulation[1]
                     child_data = {}
-                    for key in parent1['data']:
 
-                        if key in numerical_keys_for_crossover: # Apply crossover only to numerical keys
-                            if isinstance(parent1['data'][key], (pd.Series, np.ndarray)): # Check for both Series and NumPy array
-                                child_data[key] = float(parent1['data'][key].iloc[0]) * 0.6 + float(parent2['data'][key].iloc[0]) * (1 - 0.6)
-                            else:
-                                child_data[key] = float(parent1['data'][key]) * 0.6 + float(parent2['data'][key]) * (1 - 0.6)
-                        else:
-                            # For non-numerical keys (like index lists, angle rows), simply copy from parent1
-                            child_data[key] = parent1['data'][key]
+ 
+                    for key in numerical_keys_for_crossover: # Apply mutation only to numerical keys
+                        child_data[key] += random.normal(loc=0, scale=1, size=(1))[0]
 
 
-                    # Mutation
-                    u = np.random.uniform(0, 1, 1)[0]
-                    P_mutation = 0.5
-                    if u < P_mutation:
-                        for key in numerical_keys_for_crossover: # Apply mutation only to numerical keys
-                            child_data[key] += random.normal(loc=0, scale=0.1, size=(1))[0]
-
-                    # Compute child fitness
-                    def compute_fitness(data):
-                        P_m_down_value = data['P_m_down_value']
-                        P_m_har_value = data['P_m_har_value']
-                        T_m_har_value = data['T_m_har_value']
-                        f_km_value = data['f_km_value']
-                        T_km_up_value = data['T_km_up_value']
-                        V_lm_vfly_value = data['V_lm_vfly_value']
-                        V_lm_hfly_value = data['V_lm_hfly_value']
-                        P_km_up_value=data['P_km_up_value']
-                        Angle_row = data['Angle_row'] # Retrieve angle row from child data
-                        Angle1_row = data['Angle1_row'] # Retrieve angle row from child data
-                        Angle2_row = data['Angle2_row'] # Retrieve angle row from child data
+                def compute_fitness(data):
+                    P_m_down_value = data['P_m_down_value']
+                    P_m_har_value = data['P_m_har_value']
+                    T_m_har_value = data['T_m_har_value']
+                    f_km_value = data['f_km_value']
+                    T_km_up_value = data['T_km_up_value']
+                    V_lm_vfly_value = data['V_lm_vfly_value']
+                    V_lm_hfly_value = data['V_lm_hfly_value']
+                    P_km_up_value=data['P_km_up_value']
+                    Angle_row = data['Angle_row']
+                    Angle1_row = data['Angle1_row']
+                    Angle2_row = data['Angle2_row']
 
 
-                        # Calculate Bh and p_l_b for child
-                        Bh = (1 - 2.2558 * pow(10, 4) * H_value)
-                        Bh = max(1, Bh)
-                        p_l_b = (delta / 8) * Bh * Ar * s * pow(V_tip, 3)
+                    Bh = (1 - 2.2558 * pow(10, 4) * H_value)
+                    Bh = max(1, Bh)
+                    p_l_b = (delta / 8) * Bh * Ar * s * pow(V_tip, 3)
 
-                        # Calculate power values
-                        P_lm_blade_value = P_lm_blade(Nr, p_l_b, V_tip, V_lm_hfly_value)
-                        P_lm_fuselage_value = P_lm_fuselage(Cd, Af, Bh, V_lm_hfly_value)
-                        P_lm_induced_value = P_lm_induced(Nr, Bh, Ar, Wl_value, V_lm_vfly_value)
+                    P_lm_blade_value = P_lm_blade(Nr, p_l_b, V_tip, V_lm_hfly_value)
+                    P_lm_fuselage_value = P_lm_fuselage(Cd, Af, Bh, V_lm_hfly_value)
+                    P_lm_induced_value = P_lm_induced(Nr, Bh, Ar, Wl_value, V_lm_vfly_value)
 
-                        # Calculate time and energy values
-                        T_l_vfly_value = H_value / V_lm_vfly_value
-                        T_l_hfly_value = D_l_hfly_value / V_lm_hfly_value # Corrected: D_l_hfly / V_lm_hfly
-                        E_ml_har_value = P_m_har_value * T_m_har_value # Corrected: 
+                    T_l_vfly_value = H_value / V_lm_vfly_value
+                    T_l_hfly_value = D_l_hfly_value / V_lm_hfly_value
+                    E_ml_har_value = P_m_har_value * T_m_har_value
 
+                    h_kml_down_value_compute=h_kml_down(Angle_row,h_l_m_row,h_l_km_row, num_irs_ele) # Pass num_irs_ele
+                    h_ml_worst_value=h_ml_worst(h_kml_down_value_compute,sigma_km)
+                    R_ml_down_value=R_ml_down(B,P_m_down_value,h_ml_worst_value)
+                    if R_ml_down_value <= 0:
+                        R_ml_down_value = 1e-9
+                    T_ml_down_value=Dm/R_ml_down_value # using global Dm
+                    E_ml_down_value = P_m_down_value * T_ml_down_value
+                    T_km_com_value = D_km / f_km_value
+                    T_lm_hov_value = T_lm_hov(T_km_com_value, T_km_up_value, T_ml_down_value)
+                    P_l_hov_value = P_l_hov(Wl_value, p_l_b, Nr, Ar, Bh)
+                    P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
+                    P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
+                    E_ml_UAV_value = E_ml_UAV(P_l_vfly_value, T_l_vfly_value, P_lm_hfly_value, T_l_hfly_value, P_l_hov_value, T_lm_hov_value)
+                    h_kml_har_value_compute=h_kml_down(Angle2_row,f_l_m_row,f_l_km_row, num_irs_ele) # Pass num_irs_ele
+                    E_kml_har_value=E_kml_har(P_m_har_value,T_m_har_value) # Corrected: removed h_kml_har
+                    E_kml_com_value = E_km_com(f_km_value, T_km_com_value)
+                    E_kml_up_value=E_kml_up(P_km_up_value,T_km_up_value)
 
-                        h_kml_down_value_compute=h_kml_down(Angle_row,h_l_m_row,h_l_km_row) # Using original Angle_row, h_l_m_row, h_l_km_row for child as well - might need to be based on child data if angles are also part of optimization
-                        h_ml_worst_value=h_ml_worst(h_kml_down_value_compute,sigma_km)
-                        R_ml_down_value=R_ml_down(B,P_m_down_value,h_ml_worst_value)
-                        if R_ml_down_value <= 0: # check if R_ml_down_value is zero or negative
-                            R_ml_down_value = 1e-9 # Assign a small positive value to avoid division by zero
-                        T_ml_down_value=D_m_current/R_ml_down_value
-                        E_ml_down_value = P_m_down_value * T_ml_down_value
-                        T_km_com_value = D_km / f_km_value
-                        T_lm_hov_value = T_lm_hov(T_km_com_value, T_km_up_value, T_ml_down_value)
-                        P_l_hov_value = P_l_hov(Wl_value, p_l_b, Nr, Ar, Bh)
-                        P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
-                        P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
-                        E_ml_UAV_value = E_ml_UAV(P_l_vfly_value, T_l_vfly_value, P_lm_hfly_value, T_l_hfly_value, P_l_hov_value, T_lm_hov_value)
-                        h_kml_har_value_compute=h_kml_down(Angle2_row,f_l_m_row,f_l_km_row) # Corrected index to Angle2_row
-                        E_kml_har_value=E_kml_har(P_m_har_value,T_m_har_value,h_kml_har_value_compute) # Corrected function call for E_kml_har
-                        E_kml_com_value = E_km_com(f_km_value, T_km_com_value)
-                        E_kml_up_value=E_kml_up(P_km_up_value,T_km_up_value)
-
-
-                        # Calculate fitness
-                        fitness_value = Fitness(E_ml_har_value, E_ml_down_value, E_ml_UAV_value)
-                        current_data = {
+                    fitness_value = Fitness(E_ml_har_value, E_ml_down_value, E_ml_UAV_value)
+                    current_data = {
                             'P_m_down_value': P_m_down_value,
                             'P_m_har_value': P_m_har_value,
                             'T_m_har_value': T_m_har_value,
@@ -393,17 +356,16 @@ for D_m_current in D_m_values: # Iterate over D_km values
                             'P_km_up_value':P_km_up_value,
                             'Angle1_row':Angle1_row,
                             'Angle_row':Angle_row,
-                            'Angle2_row': Angle2_row, # Carry forward original index
-                                                        }
-                        if V_lm_hfly_value>0 and T_m_har_value>0 and T_ml_down_value>0 and T_km_up_value>0 and P_m_har_value<=p_max and P_m_down_value<=p_max and P_km_up_value<=p_km_max and (T_km_com_value+T_km_up_value+T_ml_down_value)<=T_m and f_km_value>0  and E_kml_har_value>=(E_kml_up_value+E_kml_com_value) and V_lm_vfly_value>0:
-                            return fitness_value, current_data
-                        else:
-                            return  float('inf'),{} # Return empty dict instead of float('inf') for data
+                            'Angle2_row': Angle2_row,
+                                                }
+                    if V_lm_hfly_value>0 and T_m_har_value>0 and T_ml_down_value>0 and T_km_up_value>0 and P_m_har_value<=p_max and P_m_down_value<=p_max and P_km_up_value<=p_km_max and (T_km_com_value+T_km_up_value+T_ml_down_value)<=T_m and f_km_value>0  and E_kml_har_value>=(E_kml_up_value+E_kml_com_value) and V_lm_vfly_value>0:
+                        return fitness_value, current_data
+                    else:
+                        return  float('inf'),{}
 
-                    child_fitness, child_data1 = compute_fitness(child_data)
-                    child_population.append({'fitness': child_fitness, 'data': child_data1})
-
-                # Create new population
+                child_fitness, child_data1 = compute_fitness(child_data)
+                child_population.append({'fitness': child_fitness, 'data': child_data1})
+            # Create new population
                 new_population = population + child_population
                 new_population = sorted(new_population, key=lambda x: x['fitness'])
                 population = new_population[:population_size]
@@ -482,7 +444,7 @@ for D_m_current in D_m_values: # Iterate over D_km values
         unique_indices_to_print = assignment['unique_row_indices'] # Retrieve unique_row_indices
         for key, value in best_ind['data'].items():
             if isinstance(value, pd.Series):
-                print(f"  {key}: Series: \n{value.iloc[unique_indices_to_print]}") # Print sliced Series
+                print(f"  {key}: Series: \n{value}") # Print the entire Series directly - corrected line
             elif isinstance(value, list): # Handle list type values explicitly
                 print(f"  {key}: {value}") # print list directly without formatting
             else:
@@ -495,7 +457,7 @@ for D_m_current in D_m_values: # Iterate over D_km values
             min_fitness_for_plot = assignment['best_individual']['fitness']
             best_pair_for_plot = assignment
 
-    fitness_sums_p_max.append(sum_fitness_current_p_max) # Store sum of fitness for this p_max
+    fitness_sums_irs_ele.append(sum_fitness_current_p_max) # Store sum of fitness for this p_max
 
     # Unassigned BS/UAVs
     if unassigned_bs:
@@ -510,15 +472,13 @@ for D_m_current in D_m_values: # Iterate over D_km values
             print(f"  UAV {uav_index} : No BS is assigned")
             print("-" * 20)
 
-
-# Plotting graph for Sum of Fitness vs P_max
+# Plotting graph for Sum of Fitness vs num_irs_ele
 plt.figure(figsize=(10, 6))
-D_m_range = np.arange(0.1, 1.1, 0.1)
-plt.plot(D_m_range, fitness_sums_p_max, marker='o', linestyle='-')
-plt.xlabel('D_m Value (Dm)') # Corrected x-label
+plt.plot(irs_element_values, fitness_sums_irs_ele, marker='o', linestyle='-')
+plt.xlabel('Number of IRS Elements (num_irs_ele)')
 plt.ylabel('Sum of Best Fitness Values (Auctioned Assignments)')
-plt.title('Sum of Best Fitness Values vs Dm') # Corrected title
+plt.title('Sum of Best Fitness Values vs Number of IRS Elements')
 plt.grid(True)
-plt.xticks(D_m_range)
+plt.xticks(irs_element_values)
 plt.tight_layout()
 plt.show()
