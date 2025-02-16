@@ -1,5 +1,3 @@
-# coding: utf-8
-#update the previous algorithm using Hill Climbing
 import pandas as pd
 import numpy as np
 import random

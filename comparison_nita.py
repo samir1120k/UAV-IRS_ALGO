@@ -183,7 +183,7 @@ fitness_sums_HC = [] # Store sum of fitness values for each p_max
 nita_values = np.arange(0.1, 1.1, 0.1) # D_km values from 0.1 to 1
 
 for nita in nita_values: # Iterate over D_km values
-    print(f"calculaiton for Dm",nita)
+    print(f"calculaiton for nita ",nita)
     all_best_combinations = []
     all_best_individuals = []
 
