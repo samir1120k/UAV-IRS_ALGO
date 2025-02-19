@@ -138,17 +138,17 @@ import cmath
 
 
 # T_m_har=[]
-# for i in range(10):
+# for i in range(20):
 #     x=random.uniform(0,1)
 #     T_m_har.append(x)
 
 # P_m_har=[]
-# for i in range(10):
+# for i in range(20):
 #     x=random.uniform(0,1)
 #     P_m_har.append(x)
 
 # P_m_down=[]
-# for i in range(10):
+# for i in range(20):
 #     x=random.uniform(0,1)
 #     P_m_down.append(x)
 
@@ -265,11 +265,14 @@ import cmath
 # plt.show()
 
 
-h_l_km=np.random.uniform(0,10,500)
+# h_l_km=np.random.uniform(0,10,500)
 
 
 
 
 
-df5=pd.DataFrame(h_l_km)
-df5.to_csv('P_km_up.csv',index=False)
+# df5=pd.DataFrame(h_l_km)
+# df5.to_csv('P_km_up.csv',index=False)
+
+# print(random.randint(0,50))
+# print(random.normal(loc=0, scale=1, size=(1))[0])

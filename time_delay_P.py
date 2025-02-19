@@ -172,7 +172,7 @@ def hc(hc_queue):
     numerical_keys_for_hc = [
         'P_m_down_value', 'P_m_har_value', 'T_m_har_value',
         'f_km_value', 'V_lm_vfly_value', 'V_lm_hfly_value',
-        'P_km_up_value','f_km_value','Angle1_row','Angle_row','Angle2_row',
+        'P_km_up_value','Angle1_row','Angle_row','Angle2_row',
     ]
 
 
@@ -290,7 +290,7 @@ def hc(hc_queue):
                     # Generate neighbor solution by perturbing the current solution
                     neighbor_solution_data = current_solution['data'].copy()
 
-                    for i in range(10):
+                    for i in range(4):
                         for key in numerical_keys_for_hc:
                             if key in ['Angle1_row','Angle_row','Angle2_row']: # Handle Angle Series
                                 for col in Angle_df.columns: # Iterate through each column (angle direction)
@@ -540,18 +540,18 @@ def ga(ga_queue):
                 # Initialize population
                 # Corrected loop range to use valid_indices length
                 for i in range(len(valid_indices)): # Using length of valid_indices
-                    f_km_value = f_km_bs[i] # Use BS-specific f_km
-                    P_km_up_value = P_km_up_bs[i] # Use BS-specific P_km_up
+                    f_km_value = f_km_bs[random.randint(0,50)] # Use BS-specific f_km
+                    P_km_up_value = P_km_up_bs[random.randint(0,50)] # Use BS-specific P_km_up
 
-                    Angle_row = Angle_df.iloc[i, :] # Use BS-specific Angle_df
+                    Angle_row = Angle_df.iloc[random.randint(0,50), :] # Use BS-specific Angle_df
                     h_l_m_row = h_l_m_df.iloc[k, :] # Use BS-specific h_l_m_df
-                    h_l_km_row = h_l_km_df_bs.iloc[i, :] # Use BS-specific h_l_km_df
-                    Angle1_row = Angle_UP_df.iloc[i, :] # Use BS-specific Angle_UP_df
+                    h_l_km_row = h_l_km_df_bs.iloc[random.randint(0,50), :] # Use BS-specific h_l_km_df
+                    Angle1_row = Angle_UP_df.iloc[random.randint(0,50), :] # Use BS-specific Angle_UP_df
                     g_l_m_row = g_l_m_df.iloc[k, :] # Use BS-specific g_l_m_df
-                    g_l_km_row = g_l_km_df_bs.iloc[i, :] # Use BS-specific g_l_km_df
-                    Angle2_row = Angle_har_df.iloc[i, :] # Use BS-specific Angle_har_df
+                    g_l_km_row = g_l_km_df_bs.iloc[random.randint(0,50), :] # Use BS-specific g_l_km_df
+                    Angle2_row = Angle_har_df.iloc[random.randint(0,50), :] # Use BS-specific Angle_har_df
                     f_l_m_row = f_l_m_df.iloc[k, :] # Use BS-specific f_l_m_df
-                    f_l_km_row = f_l_km_df_bs.iloc[i, :] # Use BS-specific f_l_km_df
+                    f_l_km_row = f_l_km_df_bs.iloc[random.randint(0,50), :] # Use BS-specific f_l_km_df
 
                     # Calculate power values
                     P_lm_blade_value = P_lm_blade(Nr, p_l_b, V_tip, V_lm_hfly_value)
@@ -589,7 +589,6 @@ def ga(ga_queue):
                             'P_m_har_value': P_m_har_value,
                             'T_m_har_value': T_m_har_value,
                             'f_km_value': f_km_value,
-                            'T_km_up_value': T_km_up_value,
                             'V_lm_vfly_value': V_lm_vfly_value,
                             'V_lm_hfly_value': V_lm_hfly_value,
                             'P_km_up_value':P_km_up_value,
@@ -632,7 +631,7 @@ def ga(ga_queue):
                         if u < P_mutation:
                             for key in numerical_keys_for_crossover: # Apply mutation only to numerical keys
                                 if key in ['Angle1_row','Angle_row','Angle2_row']: # Handle Angle Series
-                                    child_data[key] = pd.Series(index=Angle_df.columns, dtype='float64') # Initialize empty Series for child
+                                    # child_data[key] = pd.Series(index=Angle_df.columns, dtype='float64') # Initialize empty Series for child
                                     for col in Angle_df.columns: # Iterate through each column (angle direction)
                                         child_data[key][col] += random.normal(loc=0, scale=1, size=(1))[0]
                                 else:
@@ -644,7 +643,6 @@ def ga(ga_queue):
                             P_m_har_value = data['P_m_har_value']
                             T_m_har_value = data['T_m_har_value']
                             f_km_value = data['f_km_value']
-                            T_km_up_value = data['T_km_up_value']
                             V_lm_vfly_value = data['V_lm_vfly_value']
                             V_lm_hfly_value = data['V_lm_hfly_value']
                             P_km_up_value=data['P_km_up_value']
@@ -831,12 +829,12 @@ if __name__ == "__main__":
     fitness_sums_GA = ga_queue.get()
 
     plt.figure(figsize=(12, 7))
-    T_m_range = np.arange(0.1, 1.1, 0.1)
+    T_m_range = np.arange(1, 11, 1)
 
     plt.rcParams["font.size"] = "20"
     plt.plot(T_m_range, fitness_sums_HC, label = "HC-A")
     plt.plot(T_m_range, fitness_sums_GA, label = "C2GA")
-    plt.xlabel('Time Delay',size=20)
+    plt.xlabel('Time Delay',size=22)
     plt.ylabel('Energy',size=22)
     plt.legend()
     plt.savefig("Energy vs Time Delay.pdf", format="pdf", bbox_inches="tight", dpi=800)
