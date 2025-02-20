@@ -38,7 +38,7 @@ V_lm_hfly = uav['V_lm_hfly']
 D_l_hfly_value = 100
 
 P_km_up=p_km_UP['0']
-p_max=10 # moved inside loop
+# p_max=10 # moved inside loop
 p_km_max=10
 T_m=10
 D_m_current=0.49

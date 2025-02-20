@@ -163,7 +163,7 @@ def E_kml_har(P_m_har,T_m_har,h_km_har):
 def hc(hc_queue):
     num_bs = 5
     num_irs_ele=50
-    num_generation = 1 # Number of iterations for Hill Climbing
+    num_generation = 10 # Number of iterations for Hill Climbing
     num_uav_irs = 8
     population_size = 50 # Initial population size (used for initial solution in HC)
 
@@ -484,7 +484,7 @@ def hc(hc_queue):
 def ga(ga_queue):
     num_bs = 5
     num_irs_ele=50
-    num_generation = 1 # Number of generations, increased for GA to evolve
+    num_generation = 5 # Number of generations, increased for GA to evolve
     num_uav_irs = 8
     population_size = 50 # Population size for GA
 
@@ -497,9 +497,9 @@ def ga(ga_queue):
     ]
 
     fitness_sums_GA= [] # Store sum of fitness values for each p_max
-    height_values = range(10, 51, 5) # P_max values from 1 to 11
+    Height_value =range(10, 51, 5)  # P_max values from 1 to 11
 
-    for H_value in height_values: # Iterate over P_max values
+    for H_value in Height_value: # Iterate over P_max values
         print(f"calculaiton for H_value for GA",H_value)
         all_best_combinations = []
         all_best_individuals = []
@@ -543,6 +543,17 @@ def ga(ga_queue):
                     Sub_value+=sub(P_km_up_bs[i],h_il_up_value)
 
                 # Initialize population
+                P_l_hov_value = P_l_hov(Wl_value, p_l_b, Nr, Ar, Bh)
+                T_l_hfly_value = D_l_hfly_value / V_lm_hfly_value
+                # Calculate power values
+                P_lm_blade_value = P_lm_blade(Nr, p_l_b, V_tip, V_lm_hfly_value)
+                P_lm_fuselage_value = P_lm_fuselage(Cd, Af, Bh, V_lm_hfly_value)
+                P_lm_induced_value = P_lm_induced(Nr, Bh, Ar, Wl_value, V_lm_vfly_value)
+
+                P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
+                T_l_vfly_value = H_value / V_lm_vfly_value
+                P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
+                
                 # Corrected loop range to use valid_indices length
                 for i in range(len(valid_indices)): # Using length of valid_indices
                     f_km_value = f_km_bs[random.randint(0,50)] # Use BS-specific f_km
@@ -556,16 +567,8 @@ def ga(ga_queue):
                     g_l_km_row = g_l_km_df_bs.iloc[random.randint(0,50), :] # Use BS-specific g_l_km_df
                     Angle2_row = Angle_har_df.iloc[random.randint(0,50), :] # Use BS-specific Angle_har_df
                     f_l_m_row = f_l_m_df.iloc[k, :] # Use BS-specific f_l_m_df
-                    f_l_km_row = f_l_km_df_bs.iloc[random.randint(0,50), :] # Use BS-specific f_l_km_df
-
-                    # Calculate power values
-                    P_lm_blade_value = P_lm_blade(Nr, p_l_b, V_tip, V_lm_hfly_value)
-                    P_lm_fuselage_value = P_lm_fuselage(Cd, Af, Bh, V_lm_hfly_value)
-                    P_lm_induced_value = P_lm_induced(Nr, Bh, Ar, Wl_value, V_lm_vfly_value)
-
-                    # Calculate time and energy values
-                    T_l_vfly_value = H_value / V_lm_vfly_value
-                    T_l_hfly_value = D_l_hfly_value / V_lm_hfly_value # Corrected: D_l_hfly / V_lm_hfly
+                    f_l_km_row = f_l_km_df_bs.iloc[random.randint(0,50), :] # Use BS-specific f_l_km_d
+                    #calculate time and energy
                     E_ml_har_value = P_m_har_value * T_m_har_value
                     h_kml_down_value=h_kml_down(Angle_row,h_l_m_row,h_l_km_row) # Pass Series
                     h_ml_worst_value=h_ml_worst(h_kml_down_value,sigma_km)
@@ -573,16 +576,14 @@ def ga(ga_queue):
                     T_ml_down_value=D_m_current/R_ml_down_value
                     E_ml_down_value = P_m_down_value * T_ml_down_value
                     T_km_com_value = D_km / f_km_value
-                    h_kml_up_value=h_kml_down(Angle1_row,g_l_m_row,g_l_km_row) # Pass Series, using same function, might need different one if logic is different
-
+                    h_kml_up_value=h_kml_down(Angle1_row,g_l_m_row,g_l_km_row)
                     R_kml_up_value=R_kml_up(B,P_km_up_value,h_kml_up_value,Sub_value,sigma_km)
-                    T_km_up_value=D_m_current/R_kml_up_value # equation number 5
+                    T_km_up_value=D_m_current/R_kml_up_value 
+                    # Pass Series, using same function, might need different one if logic is different
                     T_lm_hov_value = T_lm_hov(T_km_com_value, T_km_up_value, T_ml_down_value)
-                    P_l_hov_value = P_l_hov(Wl_value, p_l_b, Nr, Ar, Bh)
-                    P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
-                    P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
+                    
+                    # equation number 5
                     E_ml_UAV_value = E_ml_UAV(P_l_vfly_value, T_l_vfly_value, P_lm_hfly_value, T_l_hfly_value, P_l_hov_value, T_lm_hov_value)
-
                     # Calculate fitness
                     result_fitness = Fitness(E_ml_har_value, E_ml_down_value, E_ml_UAV_value)
 
@@ -815,6 +816,7 @@ def ga(ga_queue):
             for uav_index in unassigned_uavs:
                 print(f"  UAV {uav_index} : No BS is assigned")
                 print("-" * 20)
+
     ga_queue.put(fitness_sums_GA)
 
 
@@ -845,7 +847,7 @@ if __name__ == "__main__":
     plt.xlabel('height',size=22)
     plt.ylabel('Energy',size=22)
     plt.legend()
-    plt.savefig("Energy vs height(Gen=1).pdf", format="pdf", bbox_inches="tight", dpi=800)
+    plt.savefig("Energy vs height(Gen=10).pdf", format="pdf", bbox_inches="tight", dpi=800)
     plt.show()
 
     percentage_improvements = []

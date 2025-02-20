@@ -5,6 +5,7 @@ import math
 from numpy import random
 import cmath
 import matplotlib.pyplot as plt
+import multiprocessing
 
 # Load datasets related to Base Stations, UAVs, and Clients
 base = pd.read_csv(r'BS_data.csv')
@@ -28,7 +29,7 @@ f_km1=pd.read_csv(r'f_km.csv')
 
 # Constants
 Wl_value = 35.28
-# H_value= 20
+H_value= 20
 P_m_har = base['P_m_har']
 T_m_har = base['T_m_har']
 P_m_down = base['P_m_down']
@@ -38,7 +39,7 @@ V_lm_hfly = uav['V_lm_hfly']
 D_l_hfly_value = 100
 
 P_km_up=p_km_UP['0']
-p_max=10 # moved inside loop
+# p_max=10 # moved inside loop
 p_km_max=10
 T_m=10
 D_m_current=0.49
@@ -59,8 +60,9 @@ sigma_km=10**(-13)
 eta=10
 kappa=0.5
 num_population=50
-# Bh = (1 - 2.2558 * pow(10, -5) *H_value)**4.2577
-# p_l_b = (delta / 8) * Bh * Ar * s * pow(V_tip, 3)
+Bh = (1 - 2.2558 * pow(10, -5) *H_value)**4.2577
+# Bh = max(1, Bh)
+p_l_b = (delta / 8) * Bh * Ar * s * pow(V_tip, 3)
 
 # Determine the maximum possible rows based on the smallest dataframe size
 min_rows = min(len(Angle_df), len(h_l_km_df), len(h_l_m_df), len(Angle_UP_df), len(g_l_km_df), len(g_l_m_df), len(Angle_har_df), len(f_l_km_df), len(f_l_m_df), len(f_km1))
@@ -110,7 +112,7 @@ def R_ml_down(B,P_m_down,h_ml_worst): #eqation number 7
 
 def h_ml_worst(h_kml_down,sigma_km): #eqation number 8
     return h_kml_down/(sigma_km) # it will return the sigal value which is minimum of all
-            # the value for each itaration
+        # the value for each itaration
 
 def calculate_exp_i_theta(theta): # part of equation 8
   return cmath.exp(1j * theta)
@@ -175,16 +177,15 @@ numerical_keys_for_crossover = [
 ]
 
 fitness_sums_GA= [] # Store sum of fitness values for each p_max
-Height_value =range(10, 51, 5)  # P_max values from 1 to 11
 
-for H_value in Height_value: # Iterate over P_max values
-    print(f"calculaiton for H_value for GA",H_value)
+
+def process_p_max_value(p_max): # Define function to process each p_max value
+    print(f"calculaiton for p_max for GA",p_max)
     all_best_combinations = []
     all_best_individuals = []
-    Bh = (1 - 2.2558 * pow(10, -5) *H_value)**4.2577
-    p_l_b = (delta / 8) * Bh * Ar * s * pow(V_tip, 3)
+    sum_fitness_current_p_max = 0 # Initialize sum of fitness for current p_max
 
-        # Main Genetic Algorithm Loop
+    # Main Genetic Algorithm Loop
     for l in range(num_bs):
         all_best_individuals_bs = []
         P_m_har_value = P_m_har.values[l]
@@ -213,7 +214,7 @@ for H_value in Height_value: # Iterate over P_max values
             population = []
             V_lm_vfly_value = V_lm_vfly.values[k]
             V_lm_hfly_value = V_lm_hfly.values[k]
-        
+
             Sub_value=0
             # Corrected loop range to use valid_indices length
             for i in range(len(valid_indices)): # Using length of valid_indices
@@ -221,17 +222,6 @@ for H_value in Height_value: # Iterate over P_max values
                 Sub_value+=sub(P_km_up_bs[i],h_il_up_value)
 
             # Initialize population
-            P_l_hov_value = P_l_hov(Wl_value, p_l_b, Nr, Ar, Bh)
-            T_l_hfly_value = D_l_hfly_value / V_lm_hfly_value
-            # Calculate power values
-            P_lm_blade_value = P_lm_blade(Nr, p_l_b, V_tip, V_lm_hfly_value)
-            P_lm_fuselage_value = P_lm_fuselage(Cd, Af, Bh, V_lm_hfly_value)
-            P_lm_induced_value = P_lm_induced(Nr, Bh, Ar, Wl_value, V_lm_vfly_value)
-
-            P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
-            T_l_vfly_value = H_value / V_lm_vfly_value
-            P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
-            
             # Corrected loop range to use valid_indices length
             for i in range(len(valid_indices)): # Using length of valid_indices
                 f_km_value = f_km_bs[random.randint(0,50)] # Use BS-specific f_km
@@ -247,13 +237,14 @@ for H_value in Height_value: # Iterate over P_max values
                 f_l_m_row = f_l_m_df.iloc[k, :] # Use BS-specific f_l_m_df
                 f_l_km_row = f_l_km_df_bs.iloc[random.randint(0,50), :] # Use BS-specific f_l_km_df
 
-  
-                
-              
+                # Calculate power values
+                P_lm_blade_value = P_lm_blade(Nr, p_l_b, V_tip, V_lm_hfly_value)
+                P_lm_fuselage_value = P_lm_fuselage(Cd, Af, Bh, V_lm_hfly_value)
+                P_lm_induced_value = P_lm_induced(Nr, Bh, Ar, Wl_value, V_lm_vfly_value)
 
                 # Calculate time and energy values
-                
-                 # Corrected: D_l_hfly / V_lm_hfly
+                T_l_vfly_value = H_value / V_lm_vfly_value
+                T_l_hfly_value = D_l_hfly_value / V_lm_hfly_value # Corrected: D_l_hfly / V_lm_hfly
                 E_ml_har_value = P_m_har_value * T_m_har_value
                 h_kml_down_value=h_kml_down(Angle_row,h_l_m_row,h_l_km_row) # Pass Series
                 h_ml_worst_value=h_ml_worst(h_kml_down_value,sigma_km)
@@ -261,14 +252,16 @@ for H_value in Height_value: # Iterate over P_max values
                 T_ml_down_value=D_m_current/R_ml_down_value
                 E_ml_down_value = P_m_down_value * T_ml_down_value
                 T_km_com_value = D_km / f_km_value
-                h_kml_up_value=h_kml_down(Angle1_row,g_l_m_row,g_l_km_row)
+                h_kml_up_value=h_kml_down(Angle1_row,g_l_m_row,g_l_km_row) # Pass Series, using same function, might need different one if logic is different
+
                 R_kml_up_value=R_kml_up(B,P_km_up_value,h_kml_up_value,Sub_value,sigma_km)
-                T_km_up_value=D_m_current/R_kml_up_value 
-                 # Pass Series, using same function, might need different one if logic is different
+                T_km_up_value=D_m_current/R_kml_up_value # equation number 5
                 T_lm_hov_value = T_lm_hov(T_km_com_value, T_km_up_value, T_ml_down_value)
-                
-                # equation number 5
+                P_l_hov_value = P_l_hov(Wl_value, p_l_b, Nr, Ar, Bh)
+                P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
+                P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
                 E_ml_UAV_value = E_ml_UAV(P_l_vfly_value, T_l_vfly_value, P_lm_hfly_value, T_l_hfly_value, P_l_hov_value, T_lm_hov_value)
+
                 # Calculate fitness
                 result_fitness = Fitness(E_ml_har_value, E_ml_down_value, E_ml_UAV_value)
 
@@ -347,7 +340,7 @@ for H_value in Height_value: # Iterate over P_max values
                         # Calculate time and energy values
                         T_l_vfly_value = H_value / V_lm_vfly_value
                         T_l_hfly_value = D_l_hfly_value / V_lm_hfly_value # Corrected: D_l_hfly / V_lm_hfly
-                        E_ml_har_value = P_m_har_value * T_m_har_value # Corrected: 
+                        E_ml_har_value = P_m_har_value * T_m_har_value # Corrected:
 
 
                         h_kml_down_value_compute=h_kml_down(Angle_row,h_l_m_row,h_l_km_row) # Using original Angle_row, h_l_m_row, h_l_km_row for child as well - might need to be based on child data if angles are also part of optimization
@@ -458,12 +451,11 @@ for H_value in Height_value: # Iterate over P_max values
             unassigned_bs.remove(best_combination_overall['bs_index'])
             unassigned_uavs.remove(best_combination_overall['uav_index'])
 
-    # Print and Plotting
+    # # Print and Plotting
     print(f"\n--- Best Unique UAV Assignments (Auction Based Method) ---")
     best_pair_for_plot = None
     min_fitness_for_plot = float('inf')
 
-    sum_fitness_current_p_max = 0 # Sum of best fitness for current p_max
     for assignment in best_assignments:
         print(f"\nBest Assignment for BS {assignment['bs_index']}:")
         print(f" UAV Index: {assignment['uav_index']}")
@@ -487,27 +479,23 @@ for H_value in Height_value: # Iterate over P_max values
             min_fitness_for_plot = assignment['best_individual']['fitness']
             best_pair_for_plot = assignment
 
-    fitness_sums_GA.append(sum_fitness_current_p_max) # Store sum of fitness for this p_max
+    return sum_fitness_current_p_max
 
-    # Unassigned BS/UAVs
-    if unassigned_bs:
-        print("\n--- Base Stations without Assigned UAVs ---")
-        for bs_index in unassigned_bs:
-            print(f"  BS {bs_index} : No UAV is assigned")
-            print("-" * 20)
+if __name__ == '__main__': # Add this to prevent issues in multiprocessing on Windows
+    P_max_values = np.arange(1, 11, 1) # P_max values from 1 to 11
+    with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
+        fitness_sums_GA = pool.map(process_p_max_value, P_max_values)
 
-    if unassigned_uavs:
-        print("\n--- UAVs without Assigned Base Stations ---")
-        for uav_index in unassigned_uavs:
-            print(f"  UAV {uav_index} : No BS is assigned")
-            print("-" * 20)
+    plt.figure(figsize=(12, 7))
+    P_max = np.arange(1, 11, 1)
+    plt.rcParams["font.size"] = "20"
+    plt.plot(P_max, fitness_sums_GA, label = "GA-A")
+    plt.xlabel('Data size (p_max)',size=20)
+    plt.ylabel('Energy',size=22)
+    plt.legend()
+    plt.savefig("Energy vs Data size_GA_parallel.pdf", format="pdf", bbox_inches="tight", dpi=800) # saved with different name
+    plt.show()
+    print("Fitness sums GA:", fitness_sums_GA) # return this variable
 
-plt.figure(figsize=(12, 7))
-Height = range(10, 51, 5)
-plt.rcParams["font.size"] = "20"
-plt.plot(Height, fitness_sums_GA, label = "GA-A")
-plt.xlabel('Height',size=20)
-plt.ylabel('Energy',size=22)
-plt.legend()
-plt.savefig("Energy vs Height_GA(Gen=1).pdf", format="pdf", bbox_inches="tight", dpi=800)
-plt.show()
+
+    

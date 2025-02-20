@@ -5,6 +5,7 @@ import math
 from numpy import random
 import cmath
 import matplotlib.pyplot as plt
+import multiprocessing # Import the multiprocessing module
 
 # Load datasets related to Base Stations, UAVs, and Clients
 base = pd.read_csv(r'BS_data.csv')
@@ -23,22 +24,22 @@ g_l_m_df=pd.read_csv(r'h_l_m1.csv') # number of IRS is 500 store in each column 
 
 Angle_har_df=pd.read_csv(r'Angle2.csv') # number of IRS is 500 store in each column
 f_l_km_df=pd.read_csv(r'h_l_km2.csv') # number of IRS is 500 store in each column
-f_l_m_df=pd.read_csv(r'h_l_m2.csv') # number of IRS is 500 store in each column # corrected filename
+f_l_m_df=pd.read_csv(r'f_l_m2.csv') # number of IRS is 500 store in each column # corrected filename
 f_km1=pd.read_csv(r'f_km.csv')
 
 # Constants
-Wl = 35.28
-# H_value= 20
+Wl_value = 35.28
+H_value= 20
 P_m_har = base['P_m_har']
 T_m_har = base['T_m_har']
 P_m_down = base['P_m_down']
 f_km=f_km1['0']
 V_lm_vfly = uav['V_lm_vfly']
 V_lm_hfly = uav['V_lm_hfly']
-D_l_hfly = 100
+D_l_hfly_value = 100
 
 P_km_up=p_km_UP['0']
-p_max=10 # moved inside loop
+# p_max=10 # moved inside loop
 p_km_max=10
 T_m=10
 D_m_current=0.49
@@ -59,8 +60,9 @@ sigma_km=10**(-13)
 eta=10
 kappa=0.5
 num_population=50
-# Bh = (1 - 2.2558 * pow(10, -5) *H_value)**4.2577
-# p_l_b = (delta / 8) * Bh * Ar * s * pow(V_tip, 3)
+Bh = (1 - 2.2558 * pow(10, -5) *H_value)**4.2577
+# Bh = max(1, Bh)
+p_l_b = (delta / 8) * Bh * Ar * s * pow(V_tip, 3)
 
 # Determine the maximum possible rows based on the smallest dataframe size
 min_rows = min(len(Angle_df), len(h_l_km_df), len(h_l_m_df), len(Angle_UP_df), len(g_l_km_df), len(g_l_m_df), len(Angle_har_df), len(f_l_km_df), len(f_l_m_df), len(f_km1))
@@ -110,7 +112,7 @@ def R_ml_down(B,P_m_down,h_ml_worst): #eqation number 7
 
 def h_ml_worst(h_kml_down,sigma_km): #eqation number 8
     return h_kml_down/(sigma_km) # it will return the sigal value which is minimum of all
-            # the value for each itaration
+        # the value for each itaration
 
 def calculate_exp_i_theta(theta): # part of equation 8
   return cmath.exp(1j * theta)
@@ -162,7 +164,7 @@ def E_kml_har(P_m_har,T_m_har,h_km_har):
 
 num_bs = 5
 num_irs_ele=50
-num_generation = 1 # Number of iterations for Hill Climbing
+num_generation = 10 # Number of iterations for Hill Climbing
 num_uav_irs = 8
 population_size = 50 # Initial population size (used for initial solution in HC)
 
@@ -177,14 +179,12 @@ numerical_keys_for_hc = [
 fitness_sums_HC = [] # Store sum of fitness values for each p_max
 
 
-height_values = range(10, 51, 5) #  values from 1 to 11
-
-for H_value in height_values: # Iterate over P_max values
-    print(f"calculaiton for H_value for HC",H_value)
+# Define a function to process each p_max value
+def process_p_max_value(p_max):
+    print(f"calculaiton for p_max for HC",p_max)
     all_best_combinations = []
     all_best_individuals = []
-    Bh = (1 - 2.2558 * pow(10, -5) *H_value)**4.2577
-    p_l_b = (delta / 8) * Bh * Ar * s * pow(V_tip, 3)
+    sum_fitness_current_p_max = 0 # Initialize sum of fitness for current p_max
 
     # Main Hill Climbing Algorithm Loop
     for l in range(num_bs):
@@ -213,8 +213,8 @@ for H_value in height_values: # Iterate over P_max values
 
             V_lm_vfly_value = V_lm_vfly.values[k]
             V_lm_hfly_value = V_lm_hfly.values[k]
-            D_l_hfly_value = D_l_hfly
-            Wl_value = Wl
+            D_l_hfly_value = D_l_hfly_value
+            Wl_value = Wl_value
             Sub_value=0
             # Corrected loop range to use valid_indices length
             for i in range(len(valid_indices)): # Using length of valid_indices
@@ -306,79 +306,79 @@ for H_value in height_values: # Iterate over P_max values
                             neighbor_solution_data[key] += random.normal(loc=0, scale=1, size=(1))[0] # Reduced scale for smaller perturbations in HC
 
 
-                    # Compute neighbor fitness (rest of your code remains the same)
-                    def compute_fitness(data): # Define compute_fitness WITHIN the generation loop - scope is fine here
-                        P_m_down_value = data['P_m_down_value']
-                        P_m_har_value = data['P_m_har_value']
-                        T_m_har_value = data['T_m_har_value']
-                        f_km_value = data['f_km_value']
-                        V_lm_vfly_value = data['V_lm_vfly_value']
-                        V_lm_hfly_value = data['V_lm_hfly_value']
-                        P_km_up_value=data['P_km_up_value']
-                        Angle_row = data['Angle_row'] # Retrieve angle row from neighbor data
-                        Angle1_row = data['Angle1_row'] # Retrieve angle row from neighbor data
-                        Angle2_row = data['Angle2_row'] # Retrieve angle row from neighbor data
+                        # Compute neighbor fitness (rest of your code remains the same)
+                        def compute_fitness(data): # Define compute_fitness WITHIN the generation loop - scope is fine here
+                            P_m_down_value = data['P_m_down_value']
+                            P_m_har_value = data['P_m_har_value']
+                            T_m_har_value = data['T_m_har_value']
+                            f_km_value = data['f_km_value']
+                            V_lm_vfly_value = data['V_lm_vfly_value']
+                            V_lm_hfly_value = data['V_lm_hfly_value']
+                            P_km_up_value=data['P_km_up_value']
+                            Angle_row = data['Angle_row'] # Retrieve angle row from neighbor data
+                            Angle1_row = data['Angle1_row'] # Retrieve angle row from neighbor data
+                            Angle2_row = data['Angle2_row'] # Retrieve angle row from neighbor data
 
-                        # Calculate power values
-                        P_lm_blade_value = P_lm_blade(Nr, p_l_b, V_tip, V_lm_hfly_value)
-                        P_lm_fuselage_value = P_lm_fuselage(Cd, Af, Bh, V_lm_hfly_value)
-                        P_lm_induced_value = P_lm_induced(Nr, Bh, Ar, Wl_value, V_lm_vfly_value)
+                            # Calculate power values
+                            P_lm_blade_value = P_lm_blade(Nr, p_l_b, V_tip, V_lm_hfly_value)
+                            P_lm_fuselage_value = P_lm_fuselage(Cd, Af, Bh, V_lm_hfly_value)
+                            P_lm_induced_value = P_lm_induced(Nr, Bh, Ar, Wl_value, V_lm_vfly_value)
 
-                        # Calculate time and energy values
-                        T_l_vfly_value = H_value / V_lm_vfly_value
-                        T_l_hfly_value = D_l_hfly_value / V_lm_hfly_value # Corrected: D_l_hfly / V_lm_hfly
-                        E_ml_har_value = P_m_har_value * T_m_har_value # Corrected:
+                            # Calculate time and energy values
+                            T_l_vfly_value = H_value / V_lm_vfly_value
+                            T_l_hfly_value = D_l_hfly_value / V_lm_hfly_value # Corrected: D_l_hfly / V_lm_hfly
+                            E_ml_har_value = P_m_har_value * T_m_har_value # Corrected:
 
-                        h_kml_down_value_compute=h_kml_down(Angle_row,h_l_m_row,h_l_km_row) # Using original Angle_row, h_l_m_row, h_l_km_row for neighbor as well - might need to be based on neighbor data if angles are also part of optimization
-                        h_ml_worst_value=h_ml_worst(h_kml_down_value_compute,sigma_km)
-                        R_ml_down_value=R_ml_down(B,P_m_down_value,h_ml_worst_value)
-                        if R_ml_down_value <= 0: # check if R_ml_down_value is zero or negative
-                            R_ml_down_value = 1e-9 # Assign a small positive value to avoid division by zero
-                        T_ml_down_value=D_m_current/R_ml_down_value
-                        E_ml_down_value = P_m_down_value * T_ml_down_value
-                        T_km_com_value = D_km / f_km_value
+                            h_kml_down_value_compute=h_kml_down(Angle_row,h_l_m_row,h_l_km_row) # Using original Angle_row, h_l_m_row, h_l_km_row for neighbor as well - might need to be based on neighbor data if angles are also part of optimization
+                            h_ml_worst_value=h_ml_worst(h_kml_down_value_compute,sigma_km)
+                            R_ml_down_value=R_ml_down(B,P_m_down_value,h_ml_worst_value)
+                            if R_ml_down_value <= 0: # check if R_ml_down_value is zero or negative
+                                R_ml_down_value = 1e-9 # Assign a small positive value to avoid division by zero
+                            T_ml_down_value=D_m_current/R_ml_down_value
+                            E_ml_down_value = P_m_down_value * T_ml_down_value
+                            T_km_com_value = D_km / f_km_value
 
-                        h_kml_up_value=h_kml_down(Angle1_row,g_l_m_row,g_l_km_row) # Pass Series, using same function, might need different one if logic is different
-                        R_kml_up_value=R_kml_up(B,P_km_up_value,h_kml_up_value,Sub_value,sigma_km)
-                        T_km_up_value=D_m_current/R_kml_up_value # equation number 5
+                            h_kml_up_value=h_kml_down(Angle1_row,g_l_m_row,g_l_km_row) # Pass Series, using same function, might need different one if logic is different
+                            R_kml_up_value=R_kml_up(B,P_km_up_value,h_kml_up_value,Sub_value,sigma_km)
+                            T_km_up_value=D_m_current/R_kml_up_value # equation number 5
 
-                        T_lm_hov_value = T_lm_hov(T_km_com_value, T_km_up_value, T_ml_down_value)
-                        P_l_hov_value = P_l_hov(Wl_value, p_l_b, Nr, Ar, Bh)
-                        P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
-                        P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
-                        E_ml_UAV_value = E_ml_UAV(P_l_vfly_value, T_l_vfly_value, P_lm_hfly_value, T_l_hfly_value, P_l_hov_value, T_lm_hov_value)
-                        h_kml_har_value_compute=h_kml_down(Angle2_row,f_l_m_row,f_l_km_row) # Corrected index to Angle2_row
-                        E_kml_har_value=E_kml_har(P_m_har_value,T_m_har_value,h_kml_har_value_compute) # Corrected function call for E_kml_har
-                        E_kml_com_value = E_km_com(f_km_value, T_km_com_value)
-                        E_kml_up_value=E_kml_up(P_km_up_value,T_km_up_value)
-
-
-                        # Calculate fitness
-                        fitness_value = Fitness(E_ml_har_value, E_ml_down_value, E_ml_UAV_value)
-                        current_data = {
-                            'P_m_down_value': P_m_down_value,
-                            'P_m_har_value': P_m_har_value,
-                            'T_m_har_value': T_m_har_value,
-                            'f_km_value': f_km_value,
-                            'V_lm_vfly_value': V_lm_vfly_value,
-                            'V_lm_hfly_value': V_lm_hfly_value,
-                            'P_km_up_value':P_km_up_value,
-                            'Angle1_row':Angle1_row,
-                            'Angle_row':Angle_row,
-                            'Angle2_row': Angle2_row, # Carry forward original index
-                                                                }
-                        if V_lm_hfly_value>0 and T_m_har_value>0 and T_ml_down_value>0 and T_km_up_value>0 and P_m_har_value<=p_max and P_m_down_value<=p_max and P_km_up_value<=p_km_max and (T_km_com_value+T_km_up_value+T_ml_down_value)<=T_m and f_km_value>0  and E_kml_har_value>=(E_kml_up_value+E_kml_com_value) and V_lm_vfly_value>0:
-                            return fitness_value, current_data
-                        else:
-                            return  float('inf'),{} # Return empty dict instead of float('inf') for data
+                            T_lm_hov_value = T_lm_hov(T_km_com_value, T_km_up_value, T_ml_down_value)
+                            P_l_hov_value = P_l_hov(Wl_value, p_l_b, Nr, Ar, Bh)
+                            P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
+                            P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
+                            E_ml_UAV_value = E_ml_UAV(P_l_vfly_value, T_l_vfly_value, P_lm_hfly_value, T_l_hfly_value, P_l_hov_value, T_lm_hov_value)
+                            h_kml_har_value_compute=h_kml_down(Angle2_row,f_l_m_row,f_l_km_row) # Corrected index to Angle2_row
+                            E_kml_har_value=E_kml_har(P_m_har_value,T_m_har_value,h_kml_har_value_compute) # Corrected function call for E_kml_har
+                            E_kml_com_value = E_km_com(f_km_value, T_km_com_value)
+                            E_kml_up_value=E_kml_up(P_km_up_value,T_km_up_value)
 
 
-                    neighbor_fitness, neighbor_data1 = compute_fitness(neighbor_solution_data)
+                            # Calculate fitness
+                            fitness_value = Fitness(E_ml_har_value, E_ml_down_value, E_ml_UAV_value)
+                            current_data = {
+                                'P_m_down_value': P_m_down_value,
+                                'P_m_har_value': P_m_har_value,
+                                'T_m_har_value': T_m_har_value,
+                                'f_km_value': f_km_value,
+                                'V_lm_vfly_value': V_lm_vfly_value,
+                                'V_lm_hfly_value': V_lm_hfly_value,
+                                'P_km_up_value':P_km_up_value,
+                                'Angle1_row':Angle1_row,
+                                'Angle_row':Angle_row,
+                                'Angle2_row': Angle2_row, # Carry forward original index
+                                                            }
+                            if V_lm_hfly_value>0 and T_m_har_value>0 and T_ml_down_value>0 and T_km_up_value>0 and P_m_har_value<=p_max and P_m_down_value<=p_max and P_km_up_value<=p_km_max and (T_km_com_value+T_km_up_value+T_ml_down_value)<=T_m and f_km_value>0  and E_kml_har_value>=(E_kml_up_value+E_kml_com_value) and V_lm_vfly_value>0:
+                                return fitness_value, current_data
+                            else:
+                                return  float('inf'),{} # Return empty dict instead of float('inf') for data
 
 
-                    # Decide whether to accept the neighbor
-                    if neighbor_fitness < current_solution['fitness']: # Assuming minimization
-                        current_solution = {'fitness': neighbor_fitness, 'data': neighbor_data1}
+                        neighbor_fitness, neighbor_data1 = compute_fitness(neighbor_solution_data)
+
+
+                        # Decide whether to accept the neighbor
+                        if neighbor_fitness < current_solution['fitness']: # Assuming minimization
+                            current_solution = {'fitness': neighbor_fitness, 'data': neighbor_data1}
 
 
                 generations_data.append(current_solution.copy()) # Append the *updated* current_solution
@@ -390,6 +390,7 @@ for H_value in height_values: # Iterate over P_max values
             best_individual_pair['uav_index'] = k
             all_best_individuals_bs.append(best_individual_pair)
 
+            sum_fitness_current_p_max_uav = 0 # Initialize sum of fitness for current p_max and UAV
             all_best_combinations.append({
                 'bs_index': l,
                 'uav_index': k,
@@ -398,7 +399,7 @@ for H_value in height_values: # Iterate over P_max values
                 'generation_fitness': [gen['fitness'] for gen in generations_data],
                 'unique_row_indices': unique_row_indices # Store unique_row_indices in best_combinations
             })
-            # print(f"Best Fitness for BS {l}, UAV {k}: {current_solution['fitness']:.4f}")
+            sum_fitness_current_p_max_uav = current_solution['fitness'] # should return fitness value not object
 
         # Find best individual for current BS across all UAVs
         best_individual_for_bs = min(all_best_individuals_bs, key=lambda x: x['fitness'])
@@ -446,49 +447,24 @@ for H_value in height_values: # Iterate over P_max values
 
     sum_fitness_current_p_max = 0 # Sum of best fitness for current p_max
     for assignment in best_assignments:
-        print(f"\nBest Assignment for BS {assignment['bs_index']}:")
-        print(f" UAV Index: {assignment['uav_index']}")
         best_ind = assignment['best_individual']
-        print(f" Best Individual:")
-        print(f"  Generation: {best_ind['generation']}, Type: {best_ind['type']}")
-        print(f"  Fitness: {best_ind['fitness']:.4f}") # Print current best fitness only
-        unique_indices_to_print = assignment['unique_row_indices'] # Retrieve unique_row_indices
-        for key, value in best_ind['data'].items():
-            if isinstance(value, pd.Series):
-                print(f"  {key}: Series: \n{value.iloc[unique_indices_to_print]}") # Print sliced Series
-            elif isinstance(value, list): # Handle list type values explicitly
-                print(f"  {key}: {value}") # print list directly without formatting
-            else:
-                print(f"  {key}: {value:.4f}") # Format scalar values
-
-        print("-" * 20)
         sum_fitness_current_p_max += best_ind['fitness'] # Sum fitness values
 
-        if assignment['best_individual']['fitness'] < min_fitness_for_plot:
-            min_fitness_for_plot = assignment['best_individual']['fitness']
-            best_pair_for_plot = assignment
+    return sum_fitness_current_p_max # Return sum of fitness for this p_max
 
-    fitness_sums_HC.append(sum_fitness_current_p_max) # Store sum of fitness for this p_max
 
-    # Unassigned BS/UAVs
-    if unassigned_bs:
-        print("\n--- Base Stations without Assigned UAVs ---")
-        for bs_index in unassigned_bs:
-            print(f"  BS {bs_index} : No UAV is assigned")
-            print("-" * 20)
+if __name__ == '__main__': # Add this to prevent issues in multiprocessing on Windows
+    P_max_values = np.arange(1, 11, 1) # P_max values from 1 to 11
+    with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
+        fitness_sums_HC = pool.map(process_p_max_value, P_max_values)
 
-    if unassigned_uavs:
-        print("\n--- UAVs without Assigned Base Stations ---")
-        for uav_index in unassigned_uavs:
-            print(f"  UAV {uav_index} : No BS is assigned")
-            print("-" * 20)
-
-plt.figure(figsize=(12, 7))
-height =range(10, 51, 5)
-plt.rcParams["font.size"] = "20"
-plt.plot(height, fitness_sums_HC, label = "HC-A")
-plt.xlabel('height',size=20)
-plt.ylabel('Energy',size=22)
-plt.legend()
-plt.savefig("Energy vs height_HC(Gen=10).pdf", format="pdf", bbox_inches="tight", dpi=800)
-plt.show()
+    plt.figure(figsize=(12, 7))
+    P_max = np.arange(1, 11, 1)
+    plt.rcParams["font.size"] = "20"
+    plt.plot(P_max, fitness_sums_HC, label = "HC-A")
+    plt.xlabel('Data size (p_max)',size=20)
+    plt.ylabel('Energy',size=22)
+    plt.legend()
+    plt.savefig("Energy vs Data size_HC_parallel.pdf", format="pdf", bbox_inches="tight", dpi=800) # saved with different name
+    plt.show()
+    print("Fitness sums HC:", fitness_sums_HC) # return this variable
