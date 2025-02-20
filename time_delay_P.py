@@ -164,7 +164,7 @@ def E_kml_har(P_m_har,T_m_har,h_km_har):
 def hc(hc_queue):
     num_bs = 5
     num_irs_ele=50
-    num_generation = 1 # Number of iterations for Hill Climbing
+    num_generation = 30 # Number of iterations for Hill Climbing
     num_uav_irs = 8
     population_size = 50 # Initial population size (used for initial solution in HC)
 
@@ -272,7 +272,6 @@ def hc(hc_queue):
                         'P_m_har_value': P_m_har_value,
                         'T_m_har_value': T_m_har_value,
                         'f_km_value': f_km_value,
-                        'T_km_up_value': T_km_up_value,
                         'V_lm_vfly_value': V_lm_vfly_value,
                         'V_lm_hfly_value': V_lm_hfly_value,
                         'P_km_up_value':P_km_up_value,
@@ -295,6 +294,8 @@ def hc(hc_queue):
                             if key in ['Angle1_row','Angle_row','Angle2_row']: # Handle Angle Series
                                 for col in Angle_df.columns: # Iterate through each column (angle direction)
                                     neighbor_solution_data[key][col] += random.normal(loc=0, scale=1, size=(1))[0]
+                                    if neighbor_solution_data[key][col] < 0: # Check if the RESULTING angle is negative
+                                        neighbor_solution_data[key][col] = abs(neighbor_solution_data[key][col]) # Take abs value of the RESULT
                             else:
                                 neighbor_solution_data[key] += random.normal(loc=0, scale=1, size=(1))[0] # Reduced scale for smaller perturbations in HC
 
@@ -306,7 +307,6 @@ def hc(hc_queue):
                             P_m_har_value = data['P_m_har_value']
                             T_m_har_value = data['T_m_har_value']
                             f_km_value = data['f_km_value']
-                            T_km_up_value = data['T_km_up_value']
                             V_lm_vfly_value = data['V_lm_vfly_value']
                             V_lm_hfly_value = data['V_lm_hfly_value']
                             P_km_up_value=data['P_km_up_value']
@@ -332,11 +332,16 @@ def hc(hc_queue):
                             T_ml_down_value=D_m_current/R_ml_down_value
                             E_ml_down_value = P_m_down_value * T_ml_down_value
                             T_km_com_value = D_km / f_km_value
+                            h_kml_up_value=h_kml_down(Angle1_row,g_l_m_row,g_l_km_row) # Pass Series, using same function, might need different one if logic is different
+
+                            R_kml_up_value=R_kml_up(B,P_km_up_value,h_kml_up_value,Sub_value,sigma_km)
+                            T_km_up_value=D_m_current/R_kml_up_value # equation number 5
                             T_lm_hov_value = T_lm_hov(T_km_com_value, T_km_up_value, T_ml_down_value)
                             P_l_hov_value = P_l_hov(Wl_value, p_l_b, Nr, Ar, Bh)
                             P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
                             P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
                             E_ml_UAV_value = E_ml_UAV(P_l_vfly_value, T_l_vfly_value, P_lm_hfly_value, T_l_hfly_value, P_l_hov_value, T_lm_hov_value)
+                            
                             h_kml_har_value_compute=h_kml_down(Angle2_row,f_l_m_row,f_l_km_row) # Corrected index to Angle2_row
                             E_kml_har_value=E_kml_har(P_m_har_value,T_m_har_value,h_kml_har_value_compute) # Corrected function call for E_kml_har
                             E_kml_com_value = E_km_com(f_km_value, T_km_com_value)
@@ -350,7 +355,6 @@ def hc(hc_queue):
                                 'P_m_har_value': P_m_har_value,
                                 'T_m_har_value': T_m_har_value,
                                 'f_km_value': f_km_value,
-                                'T_km_up_value': T_km_up_value,
                                 'V_lm_vfly_value': V_lm_vfly_value,
                                 'V_lm_hfly_value': V_lm_hfly_value,
                                 'P_km_up_value':P_km_up_value,
@@ -478,7 +482,7 @@ def hc(hc_queue):
 def ga(ga_queue):
     num_bs = 5
     num_irs_ele=50
-    num_generation = 1 # Number of generations, increased for GA to evolve
+    num_generation = 30 # Number of generations, increased for GA to evolve
     num_uav_irs = 8
     population_size = 50 # Population size for GA
 
@@ -486,7 +490,7 @@ def ga(ga_queue):
     numerical_keys_for_crossover = [
         'P_m_down_value', 'P_m_har_value', 'T_m_har_value',
         'f_km_value', 'V_lm_vfly_value', 'V_lm_hfly_value',
-        'P_km_up_value','f_km_value','Angle1_row','Angle_row',
+        'P_km_up_value','Angle1_row','Angle_row',
         'Angle2_row',
     ]
 
@@ -669,6 +673,10 @@ def ga(ga_queue):
                             T_ml_down_value=D_m_current/R_ml_down_value
                             E_ml_down_value = P_m_down_value * T_ml_down_value
                             T_km_com_value = D_km / f_km_value
+                            h_kml_up_value=h_kml_down(Angle1_row,g_l_m_row,g_l_km_row) # Pass Series, using same function, might need different one if logic is different
+
+                            R_kml_up_value=R_kml_up(B,P_km_up_value,h_kml_up_value,Sub_value,sigma_km)
+                            T_km_up_value=D_m_current/R_kml_up_value # equation number 5
                             T_lm_hov_value = T_lm_hov(T_km_com_value, T_km_up_value, T_ml_down_value)
                             P_l_hov_value = P_l_hov(Wl_value, p_l_b, Nr, Ar, Bh)
                             P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
@@ -687,7 +695,6 @@ def ga(ga_queue):
                                 'P_m_har_value': P_m_har_value,
                                 'T_m_har_value': T_m_har_value,
                                 'f_km_value': f_km_value,
-                                'T_km_up_value': T_km_up_value,
                                 'V_lm_vfly_value': V_lm_vfly_value,
                                 'V_lm_hfly_value': V_lm_hfly_value,
                                 'P_km_up_value':P_km_up_value,
