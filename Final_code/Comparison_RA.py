@@ -46,7 +46,7 @@ D_m_current=0.49
 
 
 # Additional constants for calculations
-delta = 2
+delta = 0.012
 Ar = 0.1256
 s = 0.05
 Nr = 4

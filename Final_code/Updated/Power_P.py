@@ -1,3 +1,4 @@
+import multiprocessing
 import pandas as pd
 import numpy as np
 import random
@@ -5,7 +6,6 @@ import math
 from numpy import random
 import cmath
 import matplotlib.pyplot as plt
-import multiprocessing
 
 # Load datasets related to Base Stations, UAVs, and Clients
 base = pd.read_csv(r'BS_data.csv')
@@ -28,7 +28,7 @@ f_l_m_df=pd.read_csv(r'h_l_m2.csv') # number of IRS is 500 store in each column 
 f_km1=pd.read_csv(r'f_km.csv')
 
 # Constants
-Wl = 35.28
+Wl_value = 35.28
 H_value= 20
 P_m_har = base['P_m_har']
 T_m_har = base['T_m_har']
@@ -36,12 +36,12 @@ P_m_down = base['P_m_down']
 f_km=f_km1['0']
 V_lm_vfly = uav['V_lm_vfly']
 V_lm_hfly = uav['V_lm_hfly']
-D_l_hfly = 100
+D_l_hfly_value = 100
 
 P_km_up=p_km_UP['0']
-p_max=10 # moved inside loop
+# p_max=10 # moved inside loop
 p_km_max=10
-# T_m=
+T_m=10
 D_m_current=0.49
 
 
@@ -164,7 +164,7 @@ def E_kml_har(P_m_har,T_m_har,h_km_har):
 def hc(hc_queue):
     num_bs = 5
     num_irs_ele=50
-    num_generation = 30 # Number of iterations for Hill Climbing
+    num_generation = 15 # Number of iterations for Hill Climbing
     num_uav_irs = 8
     population_size = 50 # Initial population size (used for initial solution in HC)
 
@@ -177,10 +177,12 @@ def hc(hc_queue):
 
 
     fitness_sums_HC = [] # Store sum of fitness values for each p_max
-    T_m_values = np.arange(1, 11, 1) # T_mT_mT_mT_mD_km values from 0.1 to 1
 
-    for T_m in T_m_values: # Iterate over T_m values
-        print(f"calculaiton for Time delay for HC",T_m)
+
+    P_max_values = np.arange(1, 11, 1) # P_max values from 1 to 11
+
+    for p_max in P_max_values: # Iterate over P_max values
+        print(f"calculaiton for p_max for HC",p_max)
         all_best_combinations = []
         all_best_individuals = []
 
@@ -210,9 +212,7 @@ def hc(hc_queue):
                 best_individual = {}
 
                 V_lm_vfly_value = V_lm_vfly.values[k]
-                V_lm_hfly_value = V_lm_hfly.values[k]
-                D_l_hfly_value = D_l_hfly
-                Wl_value = Wl
+                V_lm_hfly_value = V_lm_hfly.values[k] 
                 Sub_value=0
                 # Corrected loop range to use valid_indices length
                 for i in range(len(valid_indices)): # Using length of valid_indices
@@ -287,22 +287,25 @@ def hc(hc_queue):
                 generations_data = []
                 for j in range(num_generation): # Hill Climbing iterations
                     # Generate neighbor solution by perturbing the current solution
-                    neighbor_solution_data = current_solution['data'].copy()
+                    neighbor_solution_data = current_solution['data'].copy() # Correct: Copy current solution data
 
-                    for i in range(4):
+
+                    for i in range(10): # You can keep this loop if it's intended for repeated perturbations per generation
                         for key in numerical_keys_for_hc:
+                            # Apply mutation only to numerical keys
                             if key in ['Angle1_row','Angle_row','Angle2_row']: # Handle Angle Series
+                                # --- REMOVED: neighbor_solution_data[key] = pd.Series(index=Angle_df.columns, dtype='float64') --- # PROBLEM LINE REMOVED
                                 for col in Angle_df.columns: # Iterate through each column (angle direction)
-                                    neighbor_solution_data[key][col] += random.normal(loc=0, scale=1, size=(1))[0]
+                                    neighbor_solution_data[key][col] += random.normal(loc=0, scale=1, size=(1))[0] # Perturb EXISTING value
                                     if neighbor_solution_data[key][col] < 0: # Check if the RESULTING angle is negative
                                         neighbor_solution_data[key][col] = abs(neighbor_solution_data[key][col]) # Take abs value of the RESULT
+
                             else:
                                 neighbor_solution_data[key] += random.normal(loc=0, scale=1, size=(1))[0] # Reduced scale for smaller perturbations in HC
 
 
-
-                        # Compute neighbor fitness
-                        def compute_fitness(data):
+                        # Compute neighbor fitness (rest of your code remains the same)
+                        def compute_fitness(data): # Define compute_fitness WITHIN the generation loop - scope is fine here
                             P_m_down_value = data['P_m_down_value']
                             P_m_har_value = data['P_m_har_value']
                             T_m_har_value = data['T_m_har_value']
@@ -332,16 +335,16 @@ def hc(hc_queue):
                             T_ml_down_value=D_m_current/R_ml_down_value
                             E_ml_down_value = P_m_down_value * T_ml_down_value
                             T_km_com_value = D_km / f_km_value
-                            h_kml_up_value=h_kml_down(Angle1_row,g_l_m_row,g_l_km_row) # Pass Series, using same function, might need different one if logic is different
 
+                            h_kml_up_value=h_kml_down(Angle1_row,g_l_m_row,g_l_km_row) # Pass Series, using same function, might need different one if logic is different
                             R_kml_up_value=R_kml_up(B,P_km_up_value,h_kml_up_value,Sub_value,sigma_km)
                             T_km_up_value=D_m_current/R_kml_up_value # equation number 5
+
                             T_lm_hov_value = T_lm_hov(T_km_com_value, T_km_up_value, T_ml_down_value)
                             P_l_hov_value = P_l_hov(Wl_value, p_l_b, Nr, Ar, Bh)
                             P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
                             P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
                             E_ml_UAV_value = E_ml_UAV(P_l_vfly_value, T_l_vfly_value, P_lm_hfly_value, T_l_hfly_value, P_l_hov_value, T_lm_hov_value)
-                            
                             h_kml_har_value_compute=h_kml_down(Angle2_row,f_l_m_row,f_l_km_row) # Corrected index to Angle2_row
                             E_kml_har_value=E_kml_har(P_m_har_value,T_m_har_value,h_kml_har_value_compute) # Corrected function call for E_kml_har
                             E_kml_com_value = E_km_com(f_km_value, T_km_com_value)
@@ -361,7 +364,7 @@ def hc(hc_queue):
                                 'Angle1_row':Angle1_row,
                                 'Angle_row':Angle_row,
                                 'Angle2_row': Angle2_row, # Carry forward original index
-                                                                                    }
+                                                                    }
                             if V_lm_hfly_value>0 and T_m_har_value>0 and T_ml_down_value>0 and T_km_up_value>0 and P_m_har_value<=p_max and P_m_down_value<=p_max and P_km_up_value<=p_km_max and (T_km_com_value+T_km_up_value+T_ml_down_value)<=T_m and f_km_value>0  and E_kml_har_value>=(E_kml_up_value+E_kml_com_value) and V_lm_vfly_value>0:
                                 return fitness_value, current_data
                             else:
@@ -372,11 +375,11 @@ def hc(hc_queue):
 
 
                         # Decide whether to accept the neighbor
-                        if neighbor_fitness < current_solution['fitness']:
+                        if neighbor_fitness < current_solution['fitness']: # Assuming minimization
                             current_solution = {'fitness': neighbor_fitness, 'data': neighbor_data1}
-                            
-                    generations_data.append(current_solution.copy())
 
+
+                    generations_data.append(current_solution.copy()) # Append the *updated* current_solution
 
                 best_individual_pair = current_solution.copy()
                 best_individual_pair['generation'] = j + 1 # Use last j from loop, corrected index
@@ -478,11 +481,10 @@ def hc(hc_queue):
                 print(f"  UAV {uav_index} : No BS is assigned")
                 print("-" * 20)
     hc_queue.put(fitness_sums_HC)
-
 def ga(ga_queue):
     num_bs = 5
     num_irs_ele=50
-    num_generation = 30 # Number of generations, increased for GA to evolve
+    num_generation = 7 # Number of generations, increased for GA to evolve
     num_uav_irs = 8
     population_size = 50 # Population size for GA
 
@@ -494,17 +496,15 @@ def ga(ga_queue):
         'Angle2_row',
     ]
 
-
     fitness_sums_GA= [] # Store sum of fitness values for each p_max
+    P_max_values = np.arange(1, 11, 1) # P_max values from 1 to 11
 
-    T_m_values = np.arange(1, 11, 1) # D_km values from 0.1 to 1
-
-    for T_m in T_m_values: # Iterate over D_km values
-        print(f"calculaiton for Time Delay of GA",T_m)
+    for p_max in P_max_values: # Iterate over P_max values
+        print(f"calculaiton for p_max for GA",p_max)
         all_best_combinations = []
         all_best_individuals = []
 
-        # Main Genetic Algorithm Loop
+            # Main Genetic Algorithm Loop
         for l in range(num_bs):
             all_best_individuals_bs = []
             P_m_har_value = P_m_har.values[l]
@@ -533,8 +533,7 @@ def ga(ga_queue):
                 population = []
                 V_lm_vfly_value = V_lm_vfly.values[k]
                 V_lm_hfly_value = V_lm_hfly.values[k]
-                D_l_hfly_value = D_l_hfly
-                Wl_value = Wl
+            
                 Sub_value=0
                 # Corrected loop range to use valid_indices length
                 for i in range(len(valid_indices)): # Using length of valid_indices
@@ -564,7 +563,7 @@ def ga(ga_queue):
 
                     # Calculate time and energy values
                     T_l_vfly_value = H_value / V_lm_vfly_value
-                    T_l_hfly_value = D_l_hfly_value / V_lm_hfly_value 
+                    T_l_hfly_value = D_l_hfly_value / V_lm_hfly_value # Corrected: D_l_hfly / V_lm_hfly
                     E_ml_har_value = P_m_har_value * T_m_har_value
                     h_kml_down_value=h_kml_down(Angle_row,h_l_m_row,h_l_km_row) # Pass Series
                     h_ml_worst_value=h_ml_worst(h_kml_down_value,sigma_km)
@@ -628,8 +627,6 @@ def ga(ga_queue):
                             else:
                                 child_data[key] = float(parent1['data'][key]) * 0.6 + float(parent2['data'][key]) * (1 - 0.6)
 
-
-                        # Mutation
                         u = np.random.uniform(0, 1, 1)[0]
                         P_mutation = 0.5
                         if u < P_mutation:
@@ -818,6 +815,8 @@ def ga(ga_queue):
                 print("-" * 20)
     ga_queue.put(fitness_sums_GA)
 
+
+
 if __name__ == "__main__":
     hc_queue = multiprocessing.Queue()  # Create a queue for hill_climbing
     ga_queue = multiprocessing.Queue()  # Create a queue for genetic_algorithm
@@ -836,26 +835,27 @@ if __name__ == "__main__":
     fitness_sums_GA = ga_queue.get()
 
     plt.figure(figsize=(12, 7))
-    T_m_range = np.arange(1, 11, 1)
+    Power = np.arange(1, 11, 1)
 
     plt.rcParams["font.size"] = "20"
-    plt.plot(T_m_range, fitness_sums_HC, label = "HC-A")
-    plt.plot(T_m_range, fitness_sums_GA, label = "C2GA")
-    plt.xlabel('Time Delay',size=22)
+    plt.plot(Power, fitness_sums_HC, label = "HC-A")
+    plt.plot(Power, fitness_sums_GA, label = "C2GA")
+    plt.xlabel('Power',size=22)
     plt.ylabel('Energy',size=22)
     plt.legend()
-    plt.savefig("Energy vs Time Delay.pdf", format="pdf", bbox_inches="tight", dpi=800)
+    plt.savefig("Energy vs Power(Gen=10).pdf", format="pdf", bbox_inches="tight", dpi=800)
     plt.show()
+
     percentage_improvements = []
     better_algorithm_counts = {'HC-A': 0, 'C2GA': 0, 'Tie': 0}
     average_percentage_improvement_HC_A = 0
     average_percentage_improvement_C2GA = 0
 
     print("\n--- Algorithm Comparison ---")
-    for i in range(len(T_m_range)):
+    for i in range(len(Power)):
         hc_a_fitness = fitness_sums_HC[i]
         c2ga_fitness = fitness_sums_GA[i]
-        data_size = T_m_range[i]
+        data_size = Power[i]
 
         if hc_a_fitness < c2ga_fitness:
             better_fitness = hc_a_fitness
@@ -896,9 +896,9 @@ if __name__ == "__main__":
 
     print("\n--- Summary ---")
     print("Algorithm Performance Comparison:")
-    print(f"  HC-A was better in {better_algorithm_counts['HC-A']} out of {len(T_m_range)} cases.")
-    print(f"  C2GA was better in {better_algorithm_counts['C2GA']} out of {len(T_m_range)} cases.")
-    print(f"  Tie in {better_algorithm_counts['Tie']} out of {len(T_m_range)} cases.")
+    print(f"  HC-A was better in {better_algorithm_counts['HC-A']} out of {len(Power)} cases.")
+    print(f"  C2GA was better in {better_algorithm_counts['C2GA']} out of {len(Power)} cases.")
+    print(f"  Tie in {better_algorithm_counts['Tie']} out of {len(Power)} cases.")
 
     if better_algorithm_counts['HC-A'] > better_algorithm_counts['C2GA']:
         if hc_a_improvements:
@@ -911,5 +911,4 @@ if __name__ == "__main__":
             print(f"On average, when C2GA is better, it reduces energy consumption by approximately {average_percentage_improvement_C2GA:.2f}%.")
     else:
         print("\nOverall, both algorithms perform similarly on average based on the number of better cases.")
-
 
