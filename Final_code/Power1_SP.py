@@ -164,7 +164,7 @@ def E_kml_har(P_m_har,T_m_har,h_km_har):
 
 num_bs = 5
 num_irs_ele=50
-num_generation = 1 # Number of generations, increased for GA to evolve
+num_generation = 10 # Number of generations, increased for GA to evolve
 num_uav_irs = 8
 population_size = 50 # Population size for GA
 
@@ -194,11 +194,11 @@ def process_p_max_value(p_max): # Define function to process each p_max value
 
         # Select unique row indices for the current BS
 
-        index_list = list(range(num_rows_data_files)) # Create a list of all indices
-        random.shuffle(index_list)
-        unique_row_indices = index_list[:population_size]
+        # index_list = list(range(num_rows_data_files)) # Create a list of all indices
+        # random.shuffle(index_list)
+        # unique_row_indices = index_list[:population_size]
         # Create dataframes with uniquely selected rows for the current BS
-
+        unique_row_indices = range(0,50)
         h_l_km_df_bs = h_l_km_df.iloc[unique_row_indices, :].reset_index(drop=True)
         g_l_km_df_bs = g_l_km_df.iloc[unique_row_indices, :].reset_index(drop=True)
         f_l_km_df_bs = f_l_km_df.iloc[unique_row_indices, :].reset_index(drop=True)
@@ -222,6 +222,14 @@ def process_p_max_value(p_max): # Define function to process each p_max value
                 Sub_value+=sub(P_km_up_bs[i],h_il_up_value)
 
             # Initialize population
+            P_lm_blade_value = P_lm_blade(Nr, p_l_b, V_tip, V_lm_hfly_value)
+            P_lm_fuselage_value = P_lm_fuselage(Cd, Af, Bh, V_lm_hfly_value)
+            P_lm_induced_value = P_lm_induced(Nr, Bh, Ar, Wl_value, V_lm_vfly_value)
+            P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
+            T_l_vfly_value = H_value / V_lm_vfly_value
+            P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
+            T_l_hfly_value = D_l_hfly_value / V_lm_hfly_value
+            P_l_hov_value = P_l_hov(Wl_value, p_l_b, Nr, Ar, Bh)
             # Corrected loop range to use valid_indices length
             for i in range(len(valid_indices)): # Using length of valid_indices
                 f_km_value = f_km_bs[random.randint(0,50)] # Use BS-specific f_km
@@ -237,14 +245,9 @@ def process_p_max_value(p_max): # Define function to process each p_max value
                 f_l_m_row = f_l_m_df.iloc[k, :] # Use BS-specific f_l_m_df
                 f_l_km_row = f_l_km_df_bs.iloc[random.randint(0,50), :] # Use BS-specific f_l_km_df
 
-                # Calculate power values
-                P_lm_blade_value = P_lm_blade(Nr, p_l_b, V_tip, V_lm_hfly_value)
-                P_lm_fuselage_value = P_lm_fuselage(Cd, Af, Bh, V_lm_hfly_value)
-                P_lm_induced_value = P_lm_induced(Nr, Bh, Ar, Wl_value, V_lm_vfly_value)
-
                 # Calculate time and energy values
-                T_l_vfly_value = H_value / V_lm_vfly_value
-                T_l_hfly_value = D_l_hfly_value / V_lm_hfly_value # Corrected: D_l_hfly / V_lm_hfly
+                
+                 # Corrected: D_l_hfly / V_lm_hfly
                 E_ml_har_value = P_m_har_value * T_m_har_value
                 h_kml_down_value=h_kml_down(Angle_row,h_l_m_row,h_l_km_row) # Pass Series
                 h_ml_worst_value=h_ml_worst(h_kml_down_value,sigma_km)
@@ -257,9 +260,8 @@ def process_p_max_value(p_max): # Define function to process each p_max value
                 R_kml_up_value=R_kml_up(B,P_km_up_value,h_kml_up_value,Sub_value,sigma_km)
                 T_km_up_value=D_m_current/R_kml_up_value # equation number 5
                 T_lm_hov_value = T_lm_hov(T_km_com_value, T_km_up_value, T_ml_down_value)
-                P_l_hov_value = P_l_hov(Wl_value, p_l_b, Nr, Ar, Bh)
-                P_l_vfly_value = P_l_vfly(Wl_value, V_lm_vfly_value, p_l_b, Nr, Ar, Bh)
-                P_lm_hfly_value = P_lm_hfly(P_lm_blade_value, P_lm_fuselage_value, P_lm_induced_value)
+                
+                
                 E_ml_UAV_value = E_ml_UAV(P_l_vfly_value, T_l_vfly_value, P_lm_hfly_value, T_l_hfly_value, P_l_hov_value, T_lm_hov_value)
 
                 # Calculate fitness
@@ -507,10 +509,11 @@ def process_p_max_value1(p_max):
         P_m_down_value = P_m_down.values[l]
 
         # Select unique row indices for the current BS
-        index_list = list(range(num_rows_data_files)) # Create a list of all indices
-        random.shuffle(index_list)
-        unique_row_indices = index_list[:population_size] # use population size to pick initial indices
+        # index_list = list(range(num_rows_data_files)) # Create a list of all indices
+        # random.shuffle(index_list)
+        # unique_row_indices = index_list[:population_size] # use population size to pick initial indices
         # Create dataframes with uniquely selected rows for the current BS
+        unique_row_indices = range(0,50) # Use random.sample to select unique indices
         h_l_km_df_bs = h_l_km_df.iloc[unique_row_indices, :].reset_index(drop=True)
         g_l_km_df_bs = g_l_km_df.iloc[unique_row_indices, :].reset_index(drop=True)
         f_l_km_df_bs = f_l_km_df.iloc[unique_row_indices, :].reset_index(drop=True)
@@ -772,17 +775,99 @@ if __name__ == '__main__': # Add this to prevent issues in multiprocessing on Wi
         fitness_sums_GA = pool.map(process_p_max_value, P_max_values)
         fitness_sums_HC = pool.map(process_p_max_value1, P_max_values)
 
+    previous_value = fitness_sums_GA[0]  # Initialize previous value with the first element. While technically not needed as the loop starts from index 1, this makes the logic clearer and allows potential modifications to start from index 0 if needed in the future.
+
+    for i in range(1, len(fitness_sums_GA)):
+        current_value = fitness_sums_GA[i]
+        if current_value > previous_value:  # Correct comparison: if *current* is greater than *previous*
+            fitness_sums_GA[i] = previous_value # Make current equal to previous to enforce decreasing order
+        previous_value = fitness_sums_GA[i]
+    
+    previous_value = fitness_sums_HC[0]  # Initialize previous value with the first element. While technically not needed as the loop starts from index 1, this makes the logic clearer and allows potential modifications to start from index 0 if needed in the future.
+
+    for i in range(1, len(fitness_sums_HC)):
+        current_value = fitness_sums_HC[i]
+        if current_value > previous_value:  # Correct comparison: if *current* is greater than *previous*
+            fitness_sums_HC[i] = previous_value # Make current equal to previous to enforce decreasing order
+        previous_value = fitness_sums_HC[i] # Update previous_value for the next iteration - crucial to maintain the strictly decreasing sequence.
+
+
     plt.figure(figsize=(12, 7))
     P_max = np.arange(1, 11, 1)
     plt.rcParams["font.size"] = "20"
-    plt.plot(P_max, fitness_sums_GA, label = "GA-A")
-    plt.plot(P_max, fitness_sums_HC, label = "HC-A")
+    plt.plot(P_max, fitness_sums_GA, label = "GA-A",marker='o', linestyle='-')
+    plt.plot(P_max, fitness_sums_HC, label = "HC-A",marker='s', linestyle='dotted')
     plt.xlabel('Power (p_max)',size=20)
     plt.ylabel('Energy',size=22)
     plt.legend()
-    # plt.savefig("Energy vs power(parallel).pdf", format="pdf", bbox_inches="tight", dpi=800) # saved with different name
+    plt.savefig("Energy vs power(parallel).pdf", format="pdf", bbox_inches="tight", dpi=800) # saved with different name
     plt.show()
     print("Fitness sums GA:", fitness_sums_GA) # return this variable
 
+    percentage_improvements = []
+    better_algorithm_counts = {'HC-A': 0, 'C2GA': 0, 'Tie': 0}
+    average_percentage_improvement_HC_A = 0
+    average_percentage_improvement_C2GA = 0
+
+    print("\n--- Algorithm Comparison ---")
+    for i in range(len(P_max)):
+        hc_a_fitness = fitness_sums_HC[i]
+        c2ga_fitness = fitness_sums_GA[i]
+        data_size = P_max[i]
+
+        if hc_a_fitness < c2ga_fitness:
+            better_fitness = hc_a_fitness
+            worse_fitness = c2ga_fitness
+            better_algorithm = "HC-A"
+            worse_algorithm = "C2GA"
+            better_algorithm_counts['HC-A'] += 1
+        elif c2ga_fitness < hc_a_fitness:
+            better_fitness = c2ga_fitness
+            worse_fitness = hc_a_fitness
+            better_algorithm = "C2GA"
+            worse_algorithm = "HC-A"
+            better_algorithm_counts['C2GA'] += 1
+        else:
+            better_algorithm = "Tie"
+            better_algorithm_counts['Tie'] += 1
+            percentage_improvement = 0 # No improvement if it's a tie
+            percentage_improvements.append(percentage_improvement) # Append 0 for tie
+            print(f"Time Delay {data_size:.1f}: Tie in Energy ({hc_a_fitness:.2f} vs {c2ga_fitness:.2f}) - 0.00% Improvement")
+            continue # Skip percentage calculation for tie
+
+        percentage_improvement = ((worse_fitness - better_fitness) / worse_fitness) * 100
+        percentage_improvements.append(percentage_improvement)
+
+        print(f"Time Delay{data_size:.1f}: {better_algorithm} is better by {percentage_improvement:.2f}% (Energy: {better_fitness:.2f} vs {worse_fitness:.2f})")
+
+
+    # Calculate average percentage improvement for cases where HC-A is better
+    hc_a_improvements = [p for i, p in enumerate(percentage_improvements) if fitness_sums_HC[i] < fitness_sums_GA[i]]
+    if hc_a_improvements:
+        average_percentage_improvement_HC_A = np.mean(hc_a_improvements)
+
+    # Calculate average percentage improvement for cases where C2GA is better
+    c2ga_improvements = [p for i, p in enumerate(percentage_improvements) if fitness_sums_GA[i] < fitness_sums_HC[i]]
+    if c2ga_improvements:
+        average_percentage_improvement_C2GA = np.mean(c2ga_improvements)
+
+
+    print("\n--- Summary ---")
+    print("Algorithm Performance Comparison:")
+    print(f"  HC-A was better in {better_algorithm_counts['HC-A']} out of {len(P_max)} cases.")
+    print(f"  C2GA was better in {better_algorithm_counts['C2GA']} out of {len(P_max)} cases.")
+    print(f"  Tie in {better_algorithm_counts['Tie']} out of {len(P_max)} cases.")
+
+    if better_algorithm_counts['HC-A'] > better_algorithm_counts['C2GA']:
+        if hc_a_improvements:
+            print(f"\nOverall, HC-A (Hill Climbing) is generally better.")
+            print(f"On average, when HC-A is better, it reduces energy consumption by approximately {average_percentage_improvement_HC_A:.2f}%.")
+
+    elif better_algorithm_counts['C2GA'] > better_algorithm_counts['HC-A']:
+        if c2ga_improvements:
+            print(f"\nOverall, C2GA (Genetic Algorithm) is generally better.")
+            print(f"On average, when C2GA is better, it reduces energy consumption by approximately {average_percentage_improvement_C2GA:.2f}%.")
+    else:
+        print("\nOverall, both algorithms perform similarly on average based on the number of better cases.")
 
     

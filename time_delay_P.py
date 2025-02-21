@@ -164,7 +164,7 @@ def E_kml_har(P_m_har,T_m_har,h_km_har):
 def hc(hc_queue):
     num_bs = 5
     num_irs_ele=50
-    num_generation = 30 # Number of iterations for Hill Climbing
+    num_generation = 1 # Number of iterations for Hill Climbing
     num_uav_irs = 8
     population_size = 50 # Initial population size (used for initial solution in HC)
 
@@ -192,10 +192,11 @@ def hc(hc_queue):
             P_m_down_value = P_m_down.values[l]
 
             # Select unique row indices for the current BS
-            index_list = list(range(num_rows_data_files)) # Create a list of all indices
-            random.shuffle(index_list)
-            unique_row_indices = index_list[:population_size] # use population size to pick initial indices
+            # index_list = list(range(num_rows_data_files)) # Create a list of all indices
+            # random.shuffle(index_list)
+            # unique_row_indices = index_list[:population_size] # use population size to pick initial indices
             # Create dataframes with uniquely selected rows for the current BS
+            unique_row_indices=range(0,50)
             h_l_km_df_bs = h_l_km_df.iloc[unique_row_indices, :].reset_index(drop=True)
             g_l_km_df_bs = g_l_km_df.iloc[unique_row_indices, :].reset_index(drop=True)
             f_l_km_df_bs = f_l_km_df.iloc[unique_row_indices, :].reset_index(drop=True)
@@ -482,7 +483,7 @@ def hc(hc_queue):
 def ga(ga_queue):
     num_bs = 5
     num_irs_ele=50
-    num_generation = 30 # Number of generations, increased for GA to evolve
+    num_generation = 1 # Number of generations, increased for GA to evolve
     num_uav_irs = 8
     population_size = 50 # Population size for GA
 

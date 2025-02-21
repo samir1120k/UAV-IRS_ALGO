@@ -39,9 +39,9 @@ V_lm_hfly = uav['V_lm_hfly']
 D_l_hfly_value = 100
 
 P_km_up=p_km_UP['0']
-# p_max=10 # moved inside loop
+p_max=10 # moved inside loop
 p_km_max=10
-T_m=10
+# T_m=10
 D_m_current=0.49
 
 
@@ -179,8 +179,8 @@ numerical_keys_for_crossover = [
 fitness_sums_GA= [] # Store sum of fitness values for each p_max
 
 
-def process_p_max_value(p_max): # Define function to process each p_max value
-    print(f"calculaiton for p_max for GA",p_max)
+def process_p_max_value(T_m): # Define function to process each p_max value
+    print(f"calculaiton for T_m for GA",T_m)
     all_best_combinations = []
     all_best_individuals = []
     sum_fitness_current_p_max = 0 # Initialize sum of fitness for current p_max
@@ -194,11 +194,11 @@ def process_p_max_value(p_max): # Define function to process each p_max value
 
         # Select unique row indices for the current BS
 
-        # index_list = list(range(num_rows_data_files)) # Create a list of all indices
-        # random.shuffle(index_list)
-        # unique_row_indices = index_list[:population_size]
+        index_list = list(range(num_rows_data_files)) # Create a list of all indices
+        random.shuffle(index_list)
+        unique_row_indices = index_list[:population_size]
         # Create dataframes with uniquely selected rows for the current BS
-        unique_row_indices = range(0,50)
+        # unique_row_indices = range(0,50)
         h_l_km_df_bs = h_l_km_df.iloc[unique_row_indices, :].reset_index(drop=True)
         g_l_km_df_bs = g_l_km_df.iloc[unique_row_indices, :].reset_index(drop=True)
         f_l_km_df_bs = f_l_km_df.iloc[unique_row_indices, :].reset_index(drop=True)
@@ -488,9 +488,9 @@ def process_p_max_value(p_max): # Define function to process each p_max value
 
 
 if __name__ == '__main__': # Add this to prevent issues in multiprocessing on Windows
-    P_max_values = np.arange(1, 11, 1) # P_max values from 1 to 11
+    T_m_values = np.arange(1, 11, 1) # P_max values from 1 to 11
     with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
-        fitness_sums_GA = pool.map(process_p_max_value, P_max_values)
+        fitness_sums_GA = pool.map(process_p_max_value, T_m_values)
 
     previous_value = fitness_sums_GA[0]  # Initialize previous value with the first element. While technically not needed as the loop starts from index 1, this makes the logic clearer and allows potential modifications to start from index 0 if needed in the future.
 
@@ -501,13 +501,13 @@ if __name__ == '__main__': # Add this to prevent issues in multiprocessing on Wi
         previous_value = fitness_sums_GA[i]
 
     plt.figure(figsize=(12, 7))
-    P_max = np.arange(1, 11, 1)
+    T_m_values = np.arange(1, 11, 1)
     plt.rcParams["font.size"] = "20"
-    plt.plot(P_max, fitness_sums_GA, label = "GA-A")
-    plt.xlabel('power (p_max)',size=20)
+    plt.plot(T_m_values, fitness_sums_GA, label = "GA-A")
+    plt.xlabel('Time Delay (Tm)',size=20)
     plt.ylabel('Energy',size=22)
     plt.legend()
-    plt.savefig("Energy vs Data size_GA_parallel.pdf", format="pdf", bbox_inches="tight", dpi=800) # saved with different name
+    plt.savefig("Energy vs Time_Delay_GA_parallel.pdf", format="pdf", bbox_inches="tight", dpi=800) # saved with different name
     plt.show()
     print("Fitness sums GA:", fitness_sums_GA) # return this variable
 

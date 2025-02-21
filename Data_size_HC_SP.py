@@ -39,10 +39,10 @@ V_lm_hfly = uav['V_lm_hfly']
 D_l_hfly_value = 100
 
 P_km_up=p_km_UP['0']
-# p_max=10 # moved inside loop
+p_max=10 # moved inside loop
 p_km_max=10
 T_m=10
-D_m_current=0.49
+# D_m_current=0.49
 
 
 # Additional constants for calculations
@@ -180,8 +180,8 @@ fitness_sums_HC = [] # Store sum of fitness values for each p_max
 
 
 # Define a function to process each p_max value
-def process_p_max_value(p_max):
-    print(f"calculaiton for p_max for HC",p_max)
+def process_p_max_value(D_m_current):
+    print(f"calculaiton for D_m_current for HC",D_m_current)
     all_best_combinations = []
     all_best_individuals = []
     sum_fitness_current_p_max = 0 # Initialize sum of fitness for current p_max
@@ -454,9 +454,9 @@ def process_p_max_value(p_max):
 
 
 if __name__ == '__main__': # Add this to prevent issues in multiprocessing on Windows
-    P_max_values = np.arange(1, 11, 1) # P_max values from 1 to 11
+    D_m_current_values = np.arange(0.1, 1.1, 0.1)# P_max values from 1 to 11
     with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
-        fitness_sums_HC = pool.map(process_p_max_value, P_max_values)
+        fitness_sums_HC = pool.map(process_p_max_value, D_m_current_values)
     
     previous_value = fitness_sums_HC[0]  # Initialize previous value with the first element. While technically not needed as the loop starts from index 1, this makes the logic clearer and allows potential modifications to start from index 0 if needed in the future.
 
@@ -468,10 +468,10 @@ if __name__ == '__main__': # Add this to prevent issues in multiprocessing on Wi
 
 
     plt.figure(figsize=(12, 7))
-    P_max = np.arange(1, 11, 1)
+    D_m_current_values = np.arange(0.1, 1.1, 0.1)
     plt.rcParams["font.size"] = "20"
-    plt.plot(P_max, fitness_sums_HC, label = "HC-A")
-    plt.xlabel('Power (p_max)',size=20)
+    plt.plot(D_m_current_values, fitness_sums_HC, label = "HC-A")
+    plt.xlabel('Data size (Dm)',size=20)
     plt.ylabel('Energy',size=22)
     plt.legend()
     plt.savefig("Energy vs Data size_HC_parallel.pdf", format="pdf", bbox_inches="tight", dpi=800) # saved with different name

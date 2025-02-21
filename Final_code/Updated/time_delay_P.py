@@ -164,7 +164,7 @@ def E_kml_har(P_m_har,T_m_har,h_km_har):
 def hc(hc_queue):
     num_bs = 5
     num_irs_ele=50
-    num_generation = 30 # Number of iterations for Hill Climbing
+    num_generation = 2 # Number of iterations for Hill Climbing
     num_uav_irs = 8
     population_size = 50 # Initial population size (used for initial solution in HC)
 
@@ -482,7 +482,7 @@ def hc(hc_queue):
 def ga(ga_queue):
     num_bs = 5
     num_irs_ele=50
-    num_generation = 30 # Number of generations, increased for GA to evolve
+    num_generation = 2 # Number of generations, increased for GA to evolve
     num_uav_irs = 8
     population_size = 50 # Population size for GA
 
